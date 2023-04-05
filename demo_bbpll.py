@@ -77,7 +77,7 @@ def sys_run(n_num):
     sys_idx += n_num
 
 # A simple test
-test1 = lambda : dsim.monitor_run(sys_run, Fs = Fvco(), t_simu=150e-6, t_step = 100e-9,
+test1 = lambda : dsim.monitor_run(sys_run, Fs = Fvco(), t_simu=5e-6, t_step = 100e-9,
                  mem_list=[{'mem': t_out_mem, 'Fs': Fvco(), 'name':'Tout, Absolute Jitter', 'unit': 's', 'psd_type': 'abs_jitter', 'val_func': lambda tps: plot.jitter(tps, Fvco(), only_noise=True), 'window': 1e-6, 'marker': 'o'},\
                            # {'mem': v_control_mem, 'Fs': Fref, 'name': 'Vc', 'unit': 'V', 'psd_type': 'psd'},\
                            {'mem': t_fb_mem, 'Fs': Fref, 'name': 'Terror', 'unit': 's', 'psd_type': 'abs_jitter', 'window': 1e-6, 'marker': 'o'},\
