@@ -310,23 +310,12 @@ def fft_psd(sig, Fs):
     return r1, r2
 
 def sumover(num_N):
-    def helper(ys, xs):
-        assert len(ys) == len(xs)
-        rety = []
-        retx = []
-        tmp_sum = 0
-        for i in range(len(ys)):
-            tmp_sum += ys[i]
-            if i % num_N == num_N - 1:
-                rety.append(tmp_sum/num_N)
-                retx.append(xs[i - (num_N - 1)])
-                tmp_sum = 0
-        return rety, retx
-
     def new_helper(ys, xs):
         assert len(ys) == len(xs)
-        rety = list(ys[:num_N])
-        retx = list(xs[:num_N])
+        # rety = list(ys[:num_N])
+        # retx = list(xs[:num_N])
+        rety=[]
+        retx=[]
         tmp_sum = 0
         for i in range(num_N, len(ys)):
             tmp_sum += ys[i]

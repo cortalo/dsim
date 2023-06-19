@@ -2,6 +2,7 @@ import math
 import matplotlib.pyplot as plt
 from engineering_notation import EngNumber
 import plot_lib as plot
+import transfer_function_lib as tf_lib
 
 frac = lambda nom, denom: nom/denom
 exp = lambda x: pow(math.e, x)
@@ -19,7 +20,9 @@ def sig_init(f_caller, mem):
     f_mem = lambda idx: some_value
     '''
     def f_mem(idx):
-        if idx < len(mem):
+        if idx < 0:
+            return 0
+        elif idx < len(mem):
             return mem[idx]
         else:
             assert len(mem) == idx
@@ -28,41 +31,6 @@ def sig_init(f_caller, mem):
             return tmp
     return f_mem
 
-def sig_automem_init(f_caller, length_mem):
-    assert isinstance(length_mem, int), "length_mem is not an integer"
-    mem = []
-    loc = 0
-    def f_mem(idx):
-        nonlocal mem
-        nonlocal loc
-        assert idx >= loc
-        if idx - loc < len(mem):
-            return mem[idx-loc]
-        else:
-            assert len(mem) == idx-loc
-            tmp = f_caller()(idx)
-            if len(mem) == int(2*length_mem):
-                mem = mem[length_mem:]
-                # tmp_mem = copy.deepcopy(mem[length_mem:])
-                # mem.clear()
-                # mem = copy.deepcopy(tmp_mem)
-                # tmp_mem.clear()
-                # gc.collect()
-                loc += length_mem
-            mem.append(tmp)
-            return tmp
-    return f_mem
-
-
-def mem_init(mem):
-    def f_mem(idx):
-        return mem[idx]
-    return f_mem
-
-def sig_init_wo_mem(f_caller):
-    def f_wo_mem(idx):
-        return f_caller()(idx)
-    return f_wo_mem
 
 # Basic signal process
 def add_sig(sig_caller_list):
@@ -70,97 +38,37 @@ def add_sig(sig_caller_list):
         return sum(map(lambda sig_caller: sig_caller()(idx), sig_caller_list))
     return lambda : sig_helper
 
-
-def delay_sig(sig_caller):
-    '''
-    INPUT:  sig_caller
-    OUTOUT: sig_caller
-    '''
-    def tmps(idx):
-        if idx == 0:
-            return 0
-        else:
-            return sig_caller()(idx-1)
-    return lambda : tmps
-
-
-def bbpd(tref_caller, tfb_caller):
-    def tmps(idx):
-        if tref_caller()(idx) < tfb_caller()(idx):
-            return 1
-        else:
-            return -1
-    return lambda: tmps
-
-# Process Operators
-def parallel_proc(p_list):
-    '''
-    '''
+def tf_proc(transfer_function):
     def proc_helper(sig_caller):
-        sout_callers = []
-        for p in p_list:
-            sout_callers.append(p(sig_caller))
-        def sig_helper(idx):
-            ret = 0
-            for sout_caller in sout_callers:
-                ret += sout_caller()(idx)
-            return ret
-        return lambda: sig_helper
+        tf_order = transfer_function.get_order()
+        tf_a = transfer_function.a
+        tf_b = transfer_function.b
+        input_sig = sig_caller()
+        cur_idx = -1
+        prev_output = 0
+        A = [0] * tf_order
+        def output_signal(idx):
+            nonlocal cur_idx
+            nonlocal prev_output
+            nonlocal A
+            assert idx == (cur_idx + 1)
+            prev_input = input_sig(idx-1)
+            cur_input = input_sig(idx)
+            if tf_order >= 2:
+                cur_output = -tf_b[1] * prev_output + A[1] + tf_a[1] * prev_input + tf_a[0]*cur_input
+            else:
+                cur_output = -tf_b[1] * prev_output + tf_a[1] * prev_input + tf_a[0]*cur_input
+
+            for i in range(tf_order):
+                if i >= 1 and i <= (tf_order - 2) :
+                    A[i] = -tf_b[i+1]*prev_output + A[i+1] + tf_a[i+1]*prev_input
+                elif i == tf_order - 1:
+                    A[i] = -tf_b[i+1]*prev_output + tf_a[i+1]*prev_input
+            cur_idx = idx
+            prev_output = cur_output
+            return cur_output
+        return lambda : output_signal
     return proc_helper
-
-
-def series_proc(p_list):
-    '''
-    p_list = [p1, p2, p3,...]
-    ---> p1 ---> p2 ---> p3 ---> ...
-    '''
-    def proc_helper(sig_caller):
-        sout_caller = sig_caller
-        for p in p_list:
-            sout_caller = p(sout_caller)
-        return sout_caller
-    return proc_helper
-
-
-def feedback_proc(proc_G, proc_H, length_mem):
-    ''' feedback
-    --->+--- G ------>
-        ^         |
-        |         |
-        ---- H ----
-    '''
-    def proc_helper(sig_caller, signame=''):
-        '''
-        mem must be inside proc_helper
-        '''
-        def sout_caller():
-            nonlocal sout
-            return sout
-        def sfb_caller():
-            nonlocal sfb
-            return sfb
-        def ssum_caller():
-            nonlocal ssum
-            return ssum
-
-        sfb = sig_automem_init(proc_H(sout_caller), length_mem=length_mem)
-        ssum = sig_automem_init(add_sig([sig_caller, sfb_caller]), length_mem=length_mem)
-        sout = sig_automem_init(proc_G(ssum_caller), length_mem=length_mem)
-        return sout_caller
-    return proc_helper
-
-
-def scaler(kp):
-    '''
-    RETURN: sig_proc
-    '''
-    def proc_helper(sig_caller):
-        sout = sig_caller
-        def sig_helper(idx):
-            return kp * sout()(idx)
-        return lambda: sig_helper
-    return proc_helper
-
 
 def down_sampler(ratio_N):
     def proc_helper(sig_caller):
@@ -175,7 +83,6 @@ def down_sampler(ratio_N):
         return lambda: sig_helper
     return proc_helper
 
-
 def up_sampler(ratio_N):
     '''
     up sample and ZOH
@@ -188,34 +95,8 @@ def up_sampler(ratio_N):
     return proc_helper
 
 
-def ss_vco(Kvco, Fvco, div_N, length_mem, only_noise=False, init_dt=0):
-    '''
-    small signal vco.
-    delta_T is linear to delta_F instead of 1/F
-    '''
-    def tosc_caller():
-        nonlocal tosc
-        return tosc
-    tosc = sig_init_wo_mem(lambda: lambda n: n/Fvco)
-    if only_noise:
-        tosc = sig_init_wo_mem(lambda: lambda n: n*init_dt)
-    def proc_helper(sig_caller):
-        s1 = sig_caller
-        s2 = tosc_caller
-
-        def sout_caller():
-            nonlocal sout
-            return sout
-        sout = sig_automem_init(add_sig([tosc_caller, series_proc([scaler(-Kvco/Fvco/Fvco), up_sampler(div_N), integ_sig(length_mem), delay_sig])(sig_caller)]), length_mem=length_mem)
-        return sout_caller
-    return proc_helper
 
 
-integ_sig = lambda length_mem: feedback_proc(scaler(1), delay_sig, length_mem=length_mem)
-digital_loopfilter = lambda kp, ki, length_mem: parallel_proc([scaler(kp), series_proc([scaler(ki), integ_sig(length_mem=length_mem)])])
-diff_sig = parallel_proc([scaler(1), series_proc([delay_sig, scaler(-1)])])
-
-fom_vco = lambda fom, power, Fs, length_mem: series_proc([scaler(math.sqrt(1/Fs * frac(pow(10, fom/10) ,power/1e-3))), integ_sig(length_mem=length_mem)])
 
 
 def monitor_run(sys_run, mem_list, Fs, t_simu=1e-3, t_step=100e-9, plt_points=1000, psd_div=10, pause_time=1e-9):
