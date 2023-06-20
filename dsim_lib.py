@@ -31,6 +31,37 @@ def sig_init(f_caller, mem):
             return tmp
     return f_mem
 
+def sig_automem_init(f_caller, length_mem):
+    assert isinstance(length_mem, int), "length_mem is not an integer"
+    mem = []
+    loc = 0
+    def f_mem(idx):
+        nonlocal mem
+        nonlocal loc
+        if idx < 0:
+            return 0
+        else:
+            assert idx >= loc
+            if idx - loc < len(mem):
+                return mem[idx-loc]
+            else:
+                assert len(mem) == idx-loc
+                tmp = f_caller()(idx)
+                if len(mem) == int(2*length_mem):
+                    mem = mem[length_mem:]
+                    loc += length_mem
+                mem.append(tmp)
+                return tmp
+    return f_mem
+
+def sig_init_wo_mem(f_caller):
+    def f_wo_mem(idx):
+        if idx < 0:
+            return 0
+        else:
+            return f_caller()(idx)
+    return f_wo_mem
+
 
 # Basic signal process
 def add_sig(sig_caller_list):
@@ -38,7 +69,17 @@ def add_sig(sig_caller_list):
         return sum(map(lambda sig_caller: sig_caller()(idx), sig_caller_list))
     return lambda : sig_helper
 
+def sub_sig(sig_caller, sub_sig_caller):
+    def sig_helper(idx):
+        return sig_caller()(idx) - sub_sig_caller()(idx)
+    return lambda : sig_helper
+
 def tf_proc(transfer_function):
+    def get_array(array, i):
+        if i >= len(array):
+            return 0
+        else:
+            return array[i]
     def proc_helper(sig_caller):
         tf_order = transfer_function.get_order()
         tf_a = transfer_function.a
@@ -53,11 +94,18 @@ def tf_proc(transfer_function):
             nonlocal A
             assert idx == (cur_idx + 1)
             prev_input = input_sig(idx-1)
-            cur_input = input_sig(idx)
-            if tf_order >= 2:
-                cur_output = -tf_b[1] * prev_output + A[1] + tf_a[1] * prev_input + tf_a[0]*cur_input
+            if tf_a[0] != 0:
+                cur_input = input_sig(idx)
+                if tf_order >= 2:
+                    cur_output = -tf_b[1] * prev_output + A[1] + tf_a[1] * prev_input + tf_a[0]*cur_input
+                else:
+                    cur_output = -get_array(tf_b, 1) * prev_output +  get_array(tf_a, 1) * prev_input + tf_a[0]*cur_input
             else:
-                cur_output = -tf_b[1] * prev_output + tf_a[1] * prev_input + tf_a[0]*cur_input
+                if tf_order >= 2:
+                    cur_output = -tf_b[1] * prev_output + A[1] + tf_a[1] * prev_input
+                else:
+                    cur_output = -tf_b[1] * prev_output + tf_a[1] * prev_input
+
 
             for i in range(tf_order):
                 if i >= 1 and i <= (tf_order - 2) :

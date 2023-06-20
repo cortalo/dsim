@@ -36,7 +36,8 @@ class dtf:
             new_b.append(i/b[0])
         self.a=new_a
         self.b=new_b
-        assert self.pole_zero_cancel(1e-3) == False
+        assert len(self.a) == len(self.b)
+        # assert self.pole_zero_cancel(1e-3) == False
 
     def pole_zero_cancel(self,tol):
         root_a = np.roots(self.a)
@@ -136,9 +137,9 @@ class dtf:
             return nom/denom
         return f
 
-    def plot_psd(self, fig, ax, fstart=1, Fs=1e6, line='-', label='', color='C0'):
+    def plot_psd(self, fig, ax, fstart=1, Fs=1e6, line='-', label='', color='C0', atten=1):
         psd_f = plot.tf2psd(self.to_func(), var='z', sample_freq=Fs)
-        plot.plot_psd(fig, ax, psd_f, fstart=fstart, fend=Fs/2, line=line, label=label, color=color)
+        plot.plot_psd(fig, ax, psd_f, fstart=fstart, fend=Fs/2, line=line, label=label, color=color, atten=atten)
 
 
 # Boundary

@@ -209,7 +209,8 @@ def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', fsample=1, sumo
 
     tick_semilogx(ax)
     if isinstance(h, types.FunctionType):
-        subplot(ax, dB10(h), cfg)
+        new_h = lambda f: h(f)*atten
+        subplot(ax, dB10(new_h), cfg)
     elif type(h) == list:
         yvals, xvals = fft_psd(even_ary(h), fsample)
         if sumover_N != 1:
