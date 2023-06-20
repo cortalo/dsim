@@ -6,6 +6,8 @@ import sys
 import math
 import cmath
 import types
+import control
+tf=control.TransferFunction
 
 
 def from_to(n_from, n_to, s_type):
@@ -134,9 +136,13 @@ def bode(fig, axs, h, fstart = 1, fend = 1e9, enable_pm=True, enable_z=False, fs
             return ret
         return helper
 
-    def phase_margin(h, fstart = 1, fend = 1e9):
+    def phase_margin(h, fstart = 1, fend = 1e9, enable_z=False):
         magnitude = lambda f: abs(h(complex(0, 2*math.pi*f)))
         phase = to_phase(h)
+        if enable_z:
+            hz = lambda s: h(pow(math.e, s/fsample))
+            magnitude = lambda f: abs(hz(complex(0, 2*math.pi*f)))
+            phase = to_phase(hz)
         phases = phase(from_to(fstart, fend, ['decade',100]))
         min_diff = abs(magnitude(fstart) - 1)
         pm_freq = fstart
@@ -150,7 +156,13 @@ def bode(fig, axs, h, fstart = 1, fend = 1e9, enable_pm=True, enable_z=False, fs
             pm_idx += 1
         return pm, pm_freq
 
-
+    if isinstance(h, tf):
+        if h.isctime():
+            enable_z = False
+        else:
+            enable_z = True
+            fsample = 1/(h.dt)
+        h = tf2poly(h)
     magnitude = lambda f: abs(h(complex(0, 2*math.pi*f)))
     phase = to_phase(h)
     if enable_z:
@@ -173,7 +185,7 @@ def bode(fig, axs, h, fstart = 1, fend = 1e9, enable_pm=True, enable_z=False, fs
     axs[1].set_yticks([0,-45,-90,-135,-180])
     if enable_pm:
         # draw phase margin dashed lines
-        pm, pm_freq = phase_margin(h, fstart, fend)
+        pm, pm_freq = phase_margin(h, fstart, fend, enable_z)
         axs[0].set_title('Phase Margin = {:.1f} deg (at {} Hz)'.format(pm, EngNumber(pm_freq)))
         axs[0].axvline(x=pm_freq, ymin=0, ymax=(dB20(magnitude)(pm_freq) - axs[0].get_ylim()[0])/(axs[0].get_ylim()[1] - axs[0].get_ylim()[0]),color='black', linestyle='--')
         axs[1].axvline(x=pm_freq, ymin=(-180+pm - axs[1].get_ylim()[0])/(axs[1].get_ylim()[1] - axs[1].get_ylim()[0]), ymax=1 ,color='black', linestyle='--')
@@ -196,7 +208,10 @@ def bode(fig, axs, h, fstart = 1, fend = 1e9, enable_pm=True, enable_z=False, fs
 
 def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', fsample=1, sumover_N = 1, atten=1, color='C0'):
     ''' plot the power spectral density
-    h = lambda freq: psd
+    h = lambda freq: psd; or
+    h = tf; or
+    h = [list of points]
+    plot h(f)*atten
     '''
     cfg = {'xscale': 'log',
            'xvals': from_to(fstart, fend, ['decade',10000]),
@@ -208,6 +223,8 @@ def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', fsample=1, sumo
            'color': color}
 
     tick_semilogx(ax)
+    if isinstance(h, tf):
+        h = tf2psd(h)
     if isinstance(h, types.FunctionType):
         new_h = lambda f: h(f)*atten
         subplot(ax, dB10(new_h), cfg)
@@ -271,7 +288,33 @@ def osc_period(tps):
         tmp.append(tps[i] - tps[i-1])
     return np.mean(tmp)
 
+def tf2poly(h):
+    assert isinstance(h, tf)
+    h = h.minreal()
+    num = h.num[0][0]; num_order = len(num) - 1
+    den = h.den[0][0]; den_order = len(den) - 1
+    assert num_order >= 0
+    assert den_order >= 0
+    def f(z):
+        num_v = 0; den_v = 0
+        for i in range(0, len(num)):
+            num_v += num[i]*pow(z, num_order-i)
+        for i in range(0, len(den)):
+            den_v += den[i]*pow(z, den_order-i)
+        return num_v/den_v
+    return f
+
+
 def tf2psd(h, var='s', sample_freq=1):
+    if isinstance(h, tf):
+        cont_flag = h.isctime()
+        dt = h.dt
+        h = tf2poly(h)
+        if cont_flag:
+            var = 's'
+        else:
+            var = 'z'
+            sample_freq = 1/dt
     if var == 'z':
         psd = lambda freq: pow( abs(h(pow(math.e, complex(0, 2*math.pi*freq/sample_freq)))) ,2)
     else:

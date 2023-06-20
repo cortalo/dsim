@@ -2,11 +2,36 @@ import math
 import matplotlib.pyplot as plt
 from engineering_notation import EngNumber
 import plot_lib as plot
-import transfer_function_lib as tf_lib
+import control
+tf = control.TransferFunction
 
 frac = lambda nom, denom: nom/denom
 exp = lambda x: pow(math.e, x)
 
+def full_num_den(tf_sys):
+    '''
+    Make num and den has the same length by filling zeros in num.
+    '''
+    H = tf_sys.minreal()
+    num = H.num[0][0]
+    den = H.den[0][0]
+    assert den[0] != 0
+    assert len(num) <= len(den)
+    new_num = [0] * len(den)
+    new_den = [0] * len(den)
+    for i in range(1,1+len(den)):
+        new_den[-i] = den[-i]
+    for i in range(1,1+len(num)):
+        new_num[-i] = num[-i]
+    return new_num, new_den
+
+def cont2d(h, Fs):
+    '''
+    Transform a continuous to a discrete-time system.
+    '''
+    assert isinstance(h, tf)
+    assert h.isctime()
+    return h.sample(1/Fs, method='zoh')
 
 # Init
 def sig_init(f_caller, mem):
@@ -75,15 +100,17 @@ def sub_sig(sig_caller, sub_sig_caller):
     return lambda : sig_helper
 
 def tf_proc(transfer_function):
+    assert isinstance(transfer_function, tf)
     def get_array(array, i):
         if i >= len(array):
             return 0
         else:
             return array[i]
+    num,den = full_num_den(transfer_function)
     def proc_helper(sig_caller):
-        tf_order = transfer_function.get_order()
-        tf_a = transfer_function.a
-        tf_b = transfer_function.b
+        tf_order = len(den)-1
+        tf_a = num
+        tf_b = den
         input_sig = sig_caller()
         cur_idx = -1
         prev_output = 0
