@@ -33,6 +33,20 @@ def cont2d(h, Fs):
     assert h.isctime()
     return h.sample(1/Fs, method='zoh')
 
+def tf_feedback(T):
+    '''
+    T/(1+T)
+    '''
+    assert isinstance(T,tf)
+    num, den = full_num_den(T)
+    new_den = [0] * len(den)
+    for i in range(len(num)):
+        new_den[i] += num[i]
+    for i in range(len(den)):
+        new_den[i] += den[i]
+    return tf(num, new_den, T.dt)
+
+
 # Init
 def sig_init(f_caller, mem):
     '''
@@ -107,6 +121,8 @@ def tf_proc(transfer_function):
         else:
             return array[i]
     num,den = full_num_den(transfer_function)
+    assert len(num) == len(den)
+    assert den[0] == 1
     def proc_helper(sig_caller):
         tf_order = len(den)-1
         tf_a = num

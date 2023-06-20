@@ -250,13 +250,13 @@ def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_nois
     plot_psd(fig, ax, tmp, fend=Fout/2, line=line, label=label, fsample=Fout, sumover_N = sumover_N, atten=0.5*pow(Fout*2*math.pi, 2), color=color)
     ax.set_title( 'Phase Noise L' )
 
-def dist_psd_plots(fig, ax, tps, Fs, psd_type='psd', sumover_N = 1, color='C0'):
+def dist_psd_plots(fig, ax, tps, Fs, psd_type='psd', sumover_N = 1, color='C0', label=''):
     if psd_type == 'psd':
-        plot_psd(fig, ax, tps, fsample=Fs, sumover_N=sumover_N, color=color)
+        plot_psd(fig, ax, tps, fsample=Fs, sumover_N=sumover_N, color=color, label=label)
     elif psd_type == 'abs_jitter':
-        phase_noise(fig, ax, tps, Fout=Fs, sumover_N=sumover_N, color=color, only_noise=True)
+        phase_noise(fig, ax, tps, Fout=Fs, sumover_N=sumover_N, color=color, only_noise=True, label=label)
     elif psd_type == 'osc_times':
-        phase_noise(fig, ax, tps, Fout=Fs, sumover_N=sumover_N, color=color, only_noise=False)
+        phase_noise(fig, ax, tps, Fout=Fs, sumover_N=sumover_N, color=color, only_noise=False, label=label)
     else:
         print('plot lib: dist_psd_plots Error! No such psd_type')
         exit()
