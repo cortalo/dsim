@@ -92,12 +92,14 @@ def subplot(ax, f, cfg):
         ax.semilogx(xvals, y,
                     '-' if 'line' not in cfg else cfg['line'],
                     label = '' if 'label' not in cfg else cfg['label'],
-                    color = 'C0' if 'color' not in cfg else cfg['color'])
+                    color = 'C0' if 'color' not in cfg else cfg['color'],
+                    linewidth=1 if 'linewidth' not in cfg else cfg['linewidth'])
     else:
         ax.plot(xvals, y,
                 '-' if 'line' not in cfg else cfg['line'],
                 label = '' if 'label' not in cfg else cfg['label'],
-                color = 'C0' if 'color' not in cfg else cfg['color'])
+                color = 'C0' if 'color' not in cfg else cfg['color'],
+                linewidth=1 if 'linewidth' not in cfg else cfg['linewidth'])
 
     ax.set_xlabel('' if 'xlabel' not in cfg else cfg['xlabel'], fontsize=labelsize)
     ax.set_ylabel('' if 'ylabel' not in cfg else cfg['ylabel'], fontsize=labelsize)
@@ -206,7 +208,7 @@ def bode(fig, axs, h, fstart = 1, fend = 1e9, enable_pm=True, enable_z=False, fs
         axs[1].axvline(x=bw_calc, color='gray', linestyle='--')
     return fig, axs
 
-def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', fsample=1, sumover_N = 1, atten=1, color='C0'):
+def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', fsample=1, sumover_N = 1, atten=1, color='C0', linewidth=1):
     ''' plot the power spectral density
     h = lambda freq: psd; or
     h = tf; or
@@ -214,13 +216,14 @@ def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', fsample=1, sumo
     plot h(f)*atten
     '''
     cfg = {'xscale': 'log',
-           'xvals': from_to(fstart, fend, ['decade',10000]),
+           'xvals': from_to(fstart, fend, ['decade',100]),
            'ylabel': 'Magnitude (dB)',
            'xlabel': 'Frequency (Hz)',
            'title': 'Power Spectral Density',
            'line': line,
            'label': label,
-           'color': color}
+           'color': color,
+           'linewidth': linewidth}
 
     tick_semilogx(ax)
     if isinstance(h, tf):
@@ -237,7 +240,7 @@ def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', fsample=1, sumo
                 yvals[i] = yvals[i]*atten
         subplot(ax, [[xvals[i] for i in range(len(xvals)) if yvals[i] > 0], dB10([yvals[i] for i in range(len(yvals)) if yvals[i] > 0])], cfg)
 
-def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_noise=False, color='C0'):
+def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_noise=False, color='C0', linewidth=1):
     if only_noise == False:
         tmp = []
         i = 0
@@ -247,16 +250,16 @@ def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_nois
     else:
         tmp = tps
 
-    plot_psd(fig, ax, tmp, fend=Fout/2, line=line, label=label, fsample=Fout, sumover_N = sumover_N, atten=0.5*pow(Fout*2*math.pi, 2), color=color)
+    plot_psd(fig, ax, tmp, fend=Fout/2, line=line, label=label, fsample=Fout, sumover_N = sumover_N, atten=0.5*pow(Fout*2*math.pi, 2), color=color, linewidth=linewidth)
     ax.set_title( 'Phase Noise L' )
 
-def dist_psd_plots(fig, ax, tps, Fs, psd_type='psd', sumover_N = 1, color='C0', label=''):
+def dist_psd_plots(fig, ax, tps, Fs, psd_type='psd', sumover_N = 1, color='C0', label='', linewidth=1):
     if psd_type == 'psd':
-        plot_psd(fig, ax, tps, fsample=Fs, sumover_N=sumover_N, color=color, label=label)
+        plot_psd(fig, ax, tps, fsample=Fs, sumover_N=sumover_N, color=color, label=label, linewidth=linewidth)
     elif psd_type == 'abs_jitter':
-        phase_noise(fig, ax, tps, Fout=Fs, sumover_N=sumover_N, color=color, only_noise=True, label=label)
+        phase_noise(fig, ax, tps, Fout=Fs, sumover_N=sumover_N, color=color, only_noise=True, label=label, linewidth=linewidth)
     elif psd_type == 'osc_times':
-        phase_noise(fig, ax, tps, Fout=Fs, sumover_N=sumover_N, color=color, only_noise=False, label=label)
+        phase_noise(fig, ax, tps, Fout=Fs, sumover_N=sumover_N, color=color, only_noise=False, label=label, linewidth=linewidth)
     else:
         print('plot lib: dist_psd_plots Error! No such psd_type')
         exit()
@@ -351,7 +354,7 @@ def fft_psd(sig, Fs):
     r1 = psd / (Fs/N)
     r2 = np.array(from_to(0, Fs/2, ['points', N//2 + 1]))
     assert len(r1) == len(r2)
-    return r1, r2
+    return r1[1:], r2[1:]
 
 def sumover(num_N):
     def new_helper(ys, xs):
