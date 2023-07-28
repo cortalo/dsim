@@ -239,6 +239,7 @@ def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', fsample=1, sumo
             for i in range(len(yvals)):
                 yvals[i] = yvals[i]*atten
         subplot(ax, [[xvals[i] for i in range(len(xvals)) if yvals[i] > 0], dB10([yvals[i] for i in range(len(yvals)) if yvals[i] > 0])], cfg)
+        return xvals, yvals
 
 def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_noise=False, color='C0', linewidth=1):
     if only_noise == False:
@@ -255,7 +256,7 @@ def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_nois
 
 def dist_psd_plots(fig, ax, tps, Fs, psd_type='psd', sumover_N = 1, color='C0', label='', linewidth=1):
     if psd_type == 'psd':
-        plot_psd(fig, ax, tps, fsample=Fs, sumover_N=sumover_N, color=color, label=label, linewidth=linewidth)
+        return plot_psd(fig, ax, tps, fsample=Fs, sumover_N=sumover_N, color=color, label=label, linewidth=linewidth)
     elif psd_type == 'abs_jitter':
         phase_noise(fig, ax, tps, Fout=Fs, sumover_N=sumover_N, color=color, only_noise=True, label=label, linewidth=linewidth)
     elif psd_type == 'osc_times':
@@ -344,13 +345,27 @@ def psd_bw(S, fstart=1, fend=1e9, tol=1):
     return (f1+f2)/2
 
 
-def fft_psd(sig, Fs):
+def fft_psd(sig, Fs, window_function=None):
     N = len(sig)
     assert N%2 == 0
+    sig = np.array(sig)
+    if window_function == 'blackman':
+        window = np.blackman(N)
+        sig = sig * window
+    elif window_function == 'hamming':
+        window = np.hamming(N)
+        sig = sig * window
+    elif window_function == 'hanning':
+        window = np.hanning(N)
+        sig = sig * window
+    else:
+        assert window_function == None
+
     spectrum = np.fft.fft(sig) / N
     psd = pow(np.abs(spectrum),2)
     psd = psd[0:int(N/2)+1]
     psd[1:int(N/2)] = 2*psd[1:int(N/2)]
+    # psd is power on 1Hz
     r1 = psd / (Fs/N)
     r2 = np.array(from_to(0, Fs/2, ['points', N//2 + 1]))
     assert len(r1) == len(r2)
