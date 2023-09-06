@@ -115,6 +115,7 @@ def sub_sig(sig_caller, sub_sig_caller):
 
 def tf_proc(transfer_function):
     assert isinstance(transfer_function, tf)
+    assert transfer_function.isdtime()
     def get_array(array, i):
         if i >= len(array):
             return 0
@@ -127,7 +128,6 @@ def tf_proc(transfer_function):
         tf_order = len(den)-1
         tf_a = num
         tf_b = den
-        input_sig = sig_caller()
         cur_idx = -1
         prev_output = 0
         A = [0] * tf_order
@@ -136,6 +136,7 @@ def tf_proc(transfer_function):
             nonlocal prev_output
             nonlocal A
             assert idx == (cur_idx + 1)
+            input_sig = sig_caller()
             prev_input = input_sig(idx-1)
             if tf_a[0] != 0:
                 cur_input = input_sig(idx)
