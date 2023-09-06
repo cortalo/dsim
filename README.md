@@ -13,5 +13,5 @@ pip install engineering-notation
 
 Demo
 ```
-python demo_bbpll.py
+python demo_1.py
 ```
