@@ -187,7 +187,20 @@ def up_sampler(ratio_N):
     return proc_helper
 
 
+def bbpd(sig_caller):
+    sout = sig_caller
+    def sig_helper(idx):
+        if sout()(idx) > 0:
+            return 1
+        else:
+            return -1
+    return lambda: sig_helper
 
+def floor(sig_caller):
+    sout = sig_caller
+    def sig_helper(idx):
+        return math.floor(sout()(idx))
+    return lambda: sig_helper
 
 
 

@@ -15,3 +15,8 @@ Demo
 ```
 python demo_1.py
 ```
+
+## Debug Checking List
+
+- Make sure in the connections, all the procedures receives the signal caller instead of the signal itself.
+- Make sure in the signal declarations, they return the correct signal as the caller.
