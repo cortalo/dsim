@@ -101,6 +101,11 @@ def sig_init_wo_mem(f_caller):
             return f_caller()(idx)
     return f_wo_mem
 
+def mem_init(mem):
+    def f_mem(idx):
+        return mem[idx]
+    return f_mem
+
 
 # Basic signal process
 def add_sig(sig_caller_list):

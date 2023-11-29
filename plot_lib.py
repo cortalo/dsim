@@ -251,8 +251,9 @@ def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_nois
     else:
         tmp = tps
 
-    plot_psd(fig, ax, tmp, fend=Fout/2, line=line, label=label, fsample=Fout, sumover_N = sumover_N, atten=0.5*pow(Fout*2*math.pi, 2), color=color, linewidth=linewidth)
+    ret_x_vals, ret_y_vals = plot_psd(fig, ax, tmp, fend=Fout/2, line=line, label=label, fsample=Fout, sumover_N = sumover_N, atten=0.5*pow(Fout*2*math.pi, 2), color=color, linewidth=linewidth)
     ax.set_title( 'Phase Noise L' )
+    return ret_x_vals, ret_y_vals
 
 def dist_psd_plots(fig, ax, tps, Fs, psd_type='psd', sumover_N = 1, color='C0', label='', linewidth=1):
     if psd_type == 'psd':
