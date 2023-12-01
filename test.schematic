@@ -1,1 +1,2 @@
 lambda n: n --> net1
+net1 --> scaler(2) --> net2

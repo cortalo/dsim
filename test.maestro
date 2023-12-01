@@ -1,0 +1,7 @@
+schematic: test
+save: net1, net2
+runtime: net2
+runnum: 10
+---
+print(net1_mem)
+print(net2_mem)

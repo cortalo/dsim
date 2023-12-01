@@ -1,6 +1,5 @@
 import math
 import matplotlib.pyplot as plt
-from engineering_notation import EngNumber
 import plot_lib as plot
 import control
 tf = control.TransferFunction
