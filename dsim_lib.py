@@ -258,7 +258,7 @@ def quantizer_L_q(L,q):
             ret = tmp // pow(2,L)
             assert ret >= 0
             assert ret < pow(2,q)
-            return ret
+            return ret % pow(2,q)
         return lambda: sig_helper
     return proc_helper
 
