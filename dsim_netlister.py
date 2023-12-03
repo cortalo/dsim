@@ -193,13 +193,14 @@ def explicit_nets(schematic):
             max_net_num = cur_net_num
     for line in schematic:
         if len(string_to_list(line, '-->')) > 2:
-            assert cur_net[0:hi_prefix_len] == hierarchie_prefix
-            cur_net = string_to_list(line, '-->')[0]
-            if cur_net not in ret:
-                ret.append(cur_net)
-                cur_net_num = str2int(cur_net[3+hi_prefix_len:])
-                if cur_net[0+hi_prefix_len:3+hi_prefix_len] == 'net' and cur_net_num > max_net_num:
-                    max_net_num = cur_net_num
+            left_nets = string_to_list(string_to_list(line, '-->')[0], ',')
+            for cur_net in left_nets:
+                assert cur_net[0:hi_prefix_len] == hierarchie_prefix
+                if cur_net not in ret:
+                    ret.append(cur_net)
+                    cur_net_num = str2int(cur_net[3+hi_prefix_len:])
+                    if cur_net[0+hi_prefix_len:3+hi_prefix_len] == 'net' and cur_net_num > max_net_num:
+                        max_net_num = cur_net_num
     return ret, max_net_num
 
 def schematic_parser(schematic, maestro):
@@ -241,7 +242,7 @@ if sys.argv[1] == '-h' or sys.argv[1] == '--help':
     sys.exit()
 
 init_str = """
-import dsim_lib as dsim
+import dsim_core as dsim
 import plot_lib as plot
 import matplotlib.pyplot as plt
 import numpy as np
