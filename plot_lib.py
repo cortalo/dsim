@@ -241,6 +241,9 @@ def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', fsample=1, sumo
         return xvals, yvals
 
 def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_noise=False, color='C0', linewidth=1):
+    '''
+    tps is the timestamps of the oscillator (in seconds).
+    '''
     if only_noise == False:
         tmp = []
         i = 0

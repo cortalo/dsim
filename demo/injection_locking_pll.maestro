@@ -1,0 +1,17 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: injection_locking_pll
+runtime: t_out
+runnum: 1000000
+save: t_out, t_osc
+seed: 7
+--- Parameters
+beta = 1
+N = 5
+--- Plots
+fig, ax = plt.subplots(1,1)
+plot.phase_noise(fig,ax,t_osc_mem,Fout=10e9, only_noise=True,color='C0',sumover_N=100, label='OSC')
+xvals, yvals = plot.phase_noise(fig,ax,t_out_mem,Fout=10e9, only_noise=True,color='C1',sumover_N=100, label='Output')
+print(plot.dB10(yvals[0]))
+plt.legend(fontsize=14)
+plt.show()

@@ -1,0 +1,12 @@
+# Injection Locking Model
+lambda n: 0 --> t_ref
+t_ref, t_out_down_uncorr --> sub --> delta_t_err
+delta_t_err --> scaler(beta) --> delta_t_corr
+delta_t_corr, t_corr_delay --> add --> t_corr
+t_corr --> delay(1) --> t_corr_delay
+t_corr --> up_zoh(N) --> t_corr_up_zoh
+t_corr_up_zoh, t_osc --> add --> t_out
+lambda n: np.random.randn()*1e-15 --> osc_period_jitter
+osc_period_jitter --> tf([1],[1,-1],1) --> t_osc
+t_osc --> down_sampler(N) --> t_osc_down
+t_osc_down, t_corr_delay --> add --> t_out_down_uncorr

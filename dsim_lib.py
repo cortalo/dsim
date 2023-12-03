@@ -179,7 +179,7 @@ def down_sampler(ratio_N):
         return lambda: sig_helper
     return proc_helper
 
-def up_sampler(ratio_N):
+def up_zoh(ratio_N):
     '''
     up sample and ZOH
     '''
@@ -191,14 +191,30 @@ def up_sampler(ratio_N):
     return proc_helper
 
 
-def delay_sig(sig_caller):
-    sout = sig_caller
-    def sig_helper(idx):
-        if idx == 0:
-            return 0
-        else:
-            return sout()(idx-1)
-    return lambda: sig_helper
+def delay(num):
+    '''
+    Delay by constant num
+    '''
+    def proc_helper(sig_caller):
+        sout = sig_caller
+        def sig_helper(idx):
+            if idx < num:
+                return 0
+            else:
+                return sout()(idx-num)
+        return lambda: sig_helper
+    return proc_helper
+
+def scaler(num):
+    '''
+    multiply by constant num
+    '''
+    def proc_helper(sig_caller):
+        sout = sig_caller
+        def sig_helper(idx):
+            return sout()(idx) * num
+        return lambda: sig_helper
+    return proc_helper
 
 def bbpd(sig_caller):
     sout = sig_caller
@@ -216,16 +232,6 @@ def floor(sig_caller):
     return lambda: sig_helper
 
 
-def scaler(num):
-    '''
-    multiply by constant num
-    '''
-    def proc_helper(sig_caller):
-        sout = sig_caller
-        def sig_helper(idx):
-            return sout()(idx) * num
-        return lambda: sig_helper
-    return proc_helper
 
 
 def integer_divide(num):
