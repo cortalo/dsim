@@ -1,4 +1,5 @@
 # Injection Locking Model
+--- Netlist
 lambda n: 0 --> t_ref
 t_ref, t_out_down_uncorr --> sub --> delta_t_err
 delta_t_err --> scaler(beta) --> delta_t_corr
