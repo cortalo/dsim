@@ -11,10 +11,7 @@ pip install numpy
 pip install engineering-notation
 ```
 
-Demo
-```
-python demo_1.py
-```
+Update DEMO
 
 ## Debug Checking List
 
