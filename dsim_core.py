@@ -225,12 +225,11 @@ def bbpd(sig_caller):
             return -1
     return lambda: sig_helper
 
-def floor(sig_caller):
-    sout = sig_caller
-    def sig_helper(idx):
-        return math.floor(sout()(idx))
-    return lambda: sig_helper
-
+# def floor(sig_caller):
+#     sout = sig_caller
+#     def sig_helper(idx):
+#         return math.floor(sout()(idx))
+#     return lambda: sig_helper
 
 
 
@@ -248,24 +247,24 @@ def integer_divide(num):
         return lambda: sig_helper
     return proc_helper
 
-def quantizer_L_q(L,q):
-    '''
-    // pow(2,L)
-    include assertion for 0 <= ret < pow(2,q)
-    '''
-    def proc_helper(sig_caller):
-        sout = sig_caller
-        def sig_helper(idx):
-            tmp = sout()(idx)
-            assert isinstance(tmp, int)
-            assert isinstance(L, int)
-            assert isinstance(q, int)
-            ret = tmp // pow(2,L)
-            assert ret >= 0
-            assert ret < pow(2,q)
-            return ret % pow(2,q)
-        return lambda: sig_helper
-    return proc_helper
+# def quantizer_L_q(L,q):
+#     '''
+#     // pow(2,L)
+#     include assertion for 0 <= ret < pow(2,q)
+#     '''
+#     def proc_helper(sig_caller):
+#         sout = sig_caller
+#         def sig_helper(idx):
+#             tmp = sout()(idx)
+#             assert isinstance(tmp, int)
+#             assert isinstance(L, int)
+#             assert isinstance(q, int)
+#             ret = tmp // pow(2,L)
+#             assert ret >= 0
+#             assert ret < pow(2,q)
+#             return ret % pow(2,q)
+#         return lambda: sig_helper
+#     return proc_helper
 
 
 def modulus(num):

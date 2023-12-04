@@ -12,7 +12,10 @@ dsim_basic = [
     re.compile('^up_zoh\((.*)\)$'),        # Changed pattern
     re.compile('^delay\((.*)\)$'),         # Changed pattern
     re.compile(r'^scaler\((.*)\)$'),       # Changed pattern
-    re.compile(r'^tf\((.*)\)$')
+    re.compile(r'^tf\((.*)\)$'),
+    re.compile('^bbpd$'),
+    re.compile(r'^integer_divide\((.*)\)$'),
+    re.compile(r'^modulus\((.*)\)$')
 ]
 
 def in_dsim_basic(str_in):
@@ -64,11 +67,10 @@ def read_maestro(file_path):
     plots = []
 
     for line in lines:
-        line = line.strip()
         if line.startswith('#'):
             continue
         elif line.startswith('---'):
-            assert (line[4:] == 'Test' or line[4:] == 'Parameters' or line[4:] == 'Plots'), "Invalid Section Name in Maestro: --- {}".format(line[4:])
+            assert (line[4:-1] == 'Test' or line[4:-1] == 'Parameters' or line[4:-1] == 'Plots'), "Invalid Section Name in Maestro: --- {}".format(line[4:])
             if 'Test' in line:
                 current_section = 'test'
             elif 'Parameters' in line:
@@ -77,10 +79,12 @@ def read_maestro(file_path):
                 current_section = 'plots'
         else:
             if current_section == 'test':
+                line = line.strip()
                 if line:
                     key, value = line.split(': ')
                     test_info[key] = value
             elif current_section == 'parameters':
+                line = line.strip()
                 if line:
                     parameters.append(line)
             elif current_section == 'plots':
@@ -90,9 +94,13 @@ def read_maestro(file_path):
     return test_info, parameters, plots
 
 
-def read_schematic(file_path):
-    with open(file_path, 'r') as file:
-        lines = file.readlines()
+def read_schematic(file_path, maestro_dsim):
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+    else:
+        with open(maestro_dsim + '/example/' + file_path, 'r') as file:
+            lines = file.readlines()
 
     current_section = None
     pin_dict = {}
@@ -163,7 +171,7 @@ def cnet_str_block(in_net, block, out_net, maestro):
         else:
             return [], cnet_basic_str(in_net + '_caller', block, out_net, maestro)
     else:
-        son_pin_dict, son_schematic = read_schematic(block+'.schematic')
+        son_pin_dict, son_schematic = read_schematic(block+'.schematic', maestro['dsim'])
         hierarchie_cnt += 1
         hierarchie_prefix = '__h{}_'.format(hierarchie_cnt)
         new_son_schematic = []
@@ -171,7 +179,14 @@ def cnet_str_block(in_net, block, out_net, maestro):
             line_sep = string_to_list(line, sep='-->')
             line_sep[-1] = hierarchie_prefix + line_sep[-1]
             if len(line_sep) > 2:
-                line_sep[0] = hierarchie_prefix + line_sep[0]
+                left_nets = string_to_list(line_sep[0], sep=',')
+                new_left_nets = []
+                for i_left_net in left_nets:
+                    new_left_nets.append(hierarchie_prefix + i_left_net)
+                line_sep_0_str = new_left_nets[0]
+                for i in range(len(new_left_nets)-1):
+                    line_sep_0_str += (', ' + new_left_nets[i+1])
+                line_sep[0] = line_sep_0_str
             replaced_str = line_sep[0]
             for i in range(len(line_sep)-1):
                 replaced_str += (' --> ' + line_sep[i+1])
@@ -195,7 +210,7 @@ def explicit_nets(schematic):
         if len(string_to_list(line, '-->')) > 2:
             left_nets = string_to_list(string_to_list(line, '-->')[0], ',')
             for cur_net in left_nets:
-                assert cur_net[0:hi_prefix_len] == hierarchie_prefix
+                assert cur_net[0:hi_prefix_len] == hierarchie_prefix, "Actual Net Name: {}, Should Be Prefixed By {}".format(cur_net, hierarchie_prefix)
                 if cur_net not in ret:
                     ret.append(cur_net)
                     cur_net_num = str2int(cur_net[3+hi_prefix_len:])
@@ -254,7 +269,7 @@ tf = control.TransferFunction
 
 maestro, maestro_parameters, maestro_plots = read_maestro(sys.argv[1])
 if 'save' in maestro: maestro['save'] = string_to_list(maestro['save'], ',')
-pin_dict, schematic = read_schematic(maestro['schematic'] + '.schematic')
+pin_dict, schematic = read_schematic(maestro['schematic'] + '.schematic', maestro['dsim'])
 maestro['nets'], str_connections = schematic_parser(schematic, maestro)
 
 out_file = open(OUT_FILE, 'w')

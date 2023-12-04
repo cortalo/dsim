@@ -1,0 +1,8 @@
+# Discrete Time Integrator
+# With One Cycle Time Delay
+--- Netlist
+net_in, net_out --> add --> net1
+net1 --> delay(1) --> net_out
+--- Pin
+in: net_in
+out: net_out

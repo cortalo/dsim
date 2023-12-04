@@ -1,0 +1,29 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: first_order_dsm
+runtime: dsm_out
+runnum: 100000
+save: dsm_in, dsm_out, net4, net1
+seed: 7
+--- Parameters
+NUM_IN = 1021
+DSM_L = 8
+DSM_Q = 2
+dsm_in_mem = []
+dsm_in = dsim.sig_init(lambda: lambda n: int(np.random.rand()*NUM_IN), dsm_in_mem)
+--- Plots
+found_0 = False
+found_1 = False
+found_2 = False
+for i in net4_mem:
+    assert i >= 0
+    assert i <= 2
+    if i == 0: found_0 = True
+    if i == 1: found_1 = True
+    if i == 2: found_2 = True
+
+assert (found_0 and found_1 and found_2)
+assert abs(np.mean(dsm_in_mem)/pow(2, DSM_L) - np.mean(dsm_out_mem)) < 0.0001
+print('average input: {}'.format(np.mean(dsm_in_mem)/pow(2, DSM_L)))
+print('average output: {}'.format(np.mean(dsm_out_mem)))
+print('Schematic [First Order DSM] PASS')

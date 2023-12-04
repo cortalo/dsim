@@ -1,0 +1,12 @@
+--- Netlist
+lambda n: np.random.randn()*sigma_ref_buf --> ref_buf
+ref_buf, net03 --> sub --> net02
+lambda n: np.random.randn()*sigma_bbpd --> nbbpd
+net02, nbbpd --> add --> delta_t
+delta_t --> bbpd --> dlf --> up_zoh(int(DIV_N/DSM_DIV)) --> first_order_dsm --> up_zoh(DSM_DIV) --> scaler(KT) --> ktout
+lambda n: np.random.randn()*sigma_dco --> ndco
+ktout, ndco --> add --> net01
+net01 --> integrator --> pll
+pll --> down_sampler(DIV_N) --> net07
+lambda n: np.random.randn()*sigma_div --> ndiv
+net07, ndiv --> add --> net03

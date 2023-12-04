@@ -1,0 +1,26 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: bbpll
+runtime: pll
+runnum: 1000000
+save: pll
+seed: 7
+--- Parameters
+sigma_ref_buf = 50e-15
+sigma_bbpd = 25e-15
+sigma_div = 15e-15
+sigma_dco = 1e-15
+Fout = 5e9
+DSM_BF = 300e3
+KT = (1/Fout) - 1/(Fout+DSM_BF)
+DIV_N = 50
+DSM_DIV = 5
+DLF_KP = 193
+DLF_KI = 1
+DSM_L = 14
+DSM_Q = 1
+--- Plots
+print(np.std(pll_mem))
+fig, ax = plt.subplots(1,1)
+plot.phase_noise(fig,ax,pll_mem,Fout=Fout, only_noise=True,color='C0',sumover_N=100)
+plt.show()

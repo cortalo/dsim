@@ -1,0 +1,13 @@
+# First Order DSM
+# The output average should be input / pow(2,DSM_L)
+# The output will have DSM_Q bit for changing
+--- Netlist
+dsm_in --> integer_divide(pow(2, DSM_L+DSM_Q-1)) --> scaler(pow(2,DSM_Q-1)) --> net1
+dsm_in --> modulus(pow(2,DSM_L+DSM_Q-1)) --> net2
+net2, net5 --> sub --> net3
+net3 --> integrator --> integer_divide(pow(2,DSM_L)) --> net4
+net4 --> scaler(pow(2,DSM_L)) --> net5
+net1, net4 --> add --> dsm_out
+--- Pin
+in: dsm_in
+out: dsm_out

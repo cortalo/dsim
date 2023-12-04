@@ -1,0 +1,15 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: integrator
+runtime: net_out
+runnum: 100
+save: net_in, net_out
+--- Parameters
+net_in_mem = []
+net_in = dsim.sig_init(lambda: lambda n: n, net_in_mem)
+--- Plots
+sum_expect = 0
+for i in range(len(net_in_mem)):
+    assert sum_expect == net_out_mem[i], 'Schematic [integrator] FAIL'
+    sum_expect += net_in_mem[i]
+print('Schematic [integrator] PASS')
