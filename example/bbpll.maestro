@@ -19,6 +19,8 @@ DLF_KP = 193
 DLF_KI = 1
 DSM_L = 14
 DSM_Q = 1
+DITHER_NUM = 512
+EN_DITHER = 1
 --- Plots
 print(np.std(pll_mem))
 fig, ax = plt.subplots(1,1)

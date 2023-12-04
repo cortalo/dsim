@@ -1,0 +1,18 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: lfsr
+runtime: net_out
+runnum: 65536
+save: net_out
+--- Plots
+assert net_out_mem[0] == 0xace1
+assert net_out_mem[1] == 0x5670
+all_nums = set()
+for i in net_out_mem:
+    if i not in all_nums:
+       all_nums.add(i)
+assert len(all_nums) == 65535
+
+print("")
+print("Schematic [LFSR] PASS")
+print("")

@@ -8,14 +8,16 @@ hierarchie_prefix = ''
 dsim_basic = [
     re.compile('^add$'),
     re.compile('^sub$'),
-    re.compile('^down_sampler\((.*)\)$'),  # Changed pattern
-    re.compile('^up_zoh\((.*)\)$'),        # Changed pattern
-    re.compile('^delay\((.*)\)$'),         # Changed pattern
-    re.compile(r'^scaler\((.*)\)$'),       # Changed pattern
+    re.compile('^down_sampler\((.*)\)$'),
+    re.compile('^up_zoh\((.*)\)$'),
+    re.compile('^delay\((.*)\)$'),
+    re.compile(r'^scaler\((.*)\)$'),
     re.compile(r'^tf\((.*)\)$'),
     re.compile('^bbpd$'),
     re.compile(r'^integer_divide\((.*)\)$'),
-    re.compile(r'^modulus\((.*)\)$')
+    re.compile(r'^modulus\((.*)\)$'),
+    re.compile('^nand$'),
+    re.compile('^xor$'),
 ]
 
 def in_dsim_basic(str_in):
@@ -166,6 +168,26 @@ def cnet_str_block(in_net, block, out_net, maestro):
                 else:
                     in_net_callers += (in_nets[i]+'_caller')
             return [] ,cnet_basic_str(in_net_callers, 'sub_sig', out_net, maestro)
+        elif block == 'nand':
+            in_nets = string_to_list(in_net, sep=',')
+            assert len(in_nets) >= 2
+            in_net_callers = '['
+            for i in range(len(in_nets)):
+                if i != len(in_nets)-1:
+                    in_net_callers += (in_nets[i]+'_caller,')
+                else:
+                    in_net_callers += (in_nets[i]+'_caller]')
+            return [], cnet_basic_str(in_net_callers, 'nand', out_net, maestro)
+        elif block == 'xor':
+            in_nets = string_to_list(in_net, sep=',')
+            assert len(in_nets) == 2
+            in_net_callers = ''
+            for i in range(len(in_nets)):
+                if i != len(in_nets)-1:
+                    in_net_callers += (in_nets[i]+'_caller,')
+                else:
+                    in_net_callers += (in_nets[i]+'_caller')
+            return [] ,cnet_basic_str(in_net_callers, 'xor', out_net, maestro)
         elif re.compile(r'^tf\((.*)\)$').match(block):
             return [], cnet_basic_str(in_net + '_caller', 'tf_proc('+block+')', out_net, maestro)
         else:
@@ -221,6 +243,7 @@ def explicit_nets(schematic):
 def schematic_parser(schematic, maestro):
     parser_ret = ''
     all_nets, max_net_num = explicit_nets(schematic)
+    cnet_str_block_arg_list = []
     for input_string in schematic:
         line = string_to_list(input_string, '-->')
         if len(line) == 2:
@@ -234,17 +257,20 @@ def schematic_parser(schematic, maestro):
                 # next_net is the input net name
                 if i == cnet_num -1:
                     next_net = line[0]
-                    new_nets, new_cnet_strs = cnet_str_block(next_net, line[cnet_num-i], prev_net, maestro)
-                    all_nets += new_nets
-                    parser_ret += new_cnet_strs
+                    cnet_str_block_arg_list.append([next_net, line[cnet_num-i], prev_net])
                 else:
                     max_net_num += 1
                     next_net = hierarchie_prefix + 'net{}'.format(max_net_num)
                     all_nets.append(next_net)
-                    new_nets, new_cnet_strs = cnet_str_block(next_net, line[cnet_num-i], prev_net, maestro)
-                    all_nets += new_nets
-                    parser_ret += new_cnet_strs
+                    cnet_str_block_arg_list.append([next_net, line[cnet_num-i], prev_net])
                 prev_net = next_net
+    # The cnet_str_block call has to be done at the every end
+    # To prevent the recursion changing the hierarchie_prefix
+    # during the automatic net name generation
+    for items in cnet_str_block_arg_list:
+        new_nets, new_cnet_strs = cnet_str_block(items[0], items[1], items[2], maestro)
+        all_nets += new_nets
+        parser_ret += new_cnet_strs
 
     return all_nets, parser_ret
 
@@ -264,6 +290,7 @@ import numpy as np
 import math
 import control
 from tqdm import tqdm
+from engineering_notation import EngNumber
 tf = control.TransferFunction
 """
 

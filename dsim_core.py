@@ -117,6 +117,30 @@ def sub_sig(sig_caller, sub_sig_caller):
         return sig_caller()(idx) - sub_sig_caller()(idx)
     return lambda : sig_helper
 
+def nand(sig_caller_list):
+    def sig_helper(idx):
+        found_zero = False
+        for i_sig_caller in sig_caller_list:
+            i_num = i_sig_caller()(idx)
+            assert i_num in (0, 1)
+            if i_num == 0:
+                found_zero = True
+        if found_zero:
+            return 1
+        return 0
+    return lambda : sig_helper
+
+def xor(sig_caller, sub_sig_caller):
+    def sig_helper(idx):
+        num1 = sig_caller()(idx)
+        num2 = sub_sig_caller()(idx)
+        assert num1 in (0,1), "XOR doesn't support input: {}".format(num1)
+        assert num2 in (0,1),  "XOR doesn't support input: {}".format(num2)
+        if num1 == num2:
+            return 0
+        return 1
+    return lambda : sig_helper
+
 def tf_proc(transfer_function):
     assert isinstance(transfer_function, tf)
     assert transfer_function.isdtime()
@@ -191,7 +215,7 @@ def up_zoh(ratio_N):
     return proc_helper
 
 
-def delay(num):
+def delay(num, init_num = 0):
     '''
     Delay by constant num
     '''
@@ -199,7 +223,7 @@ def delay(num):
         sout = sig_caller
         def sig_helper(idx):
             if idx < num:
-                return 0
+                return init_num
             else:
                 return sout()(idx-num)
         return lambda: sig_helper

@@ -1,0 +1,42 @@
+# A 16-bit Fibonacci LFSR
+--- Netlist
+net19 --> delay(1,1) --> net1
+net1 --> delay(1,0) --> net2
+net2 --> delay(1,1) --> net3
+net3 --> delay(1,0) --> net4
+net4 --> delay(1,1) --> net5
+net5 --> delay(1,1) --> net6
+net6 --> delay(1,0) --> net7
+net7 --> delay(1,0) --> net8
+net8 --> delay(1,1) --> net9
+net9 --> delay(1,1) --> net10
+net10 --> delay(1,1) --> net11
+net11 --> delay(1,0) --> net12
+net12 --> delay(1,0) --> net13
+net13 --> delay(1,0) --> net14
+net14 --> delay(1,0) --> net15
+net15 --> delay(1,1) --> net16
+net14, net16 --> xor --> net17
+net13, net17 --> xor --> net18
+net11, net18 --> xor --> net19
+net1 --> scaler(pow(2, 15)) --> net1_num
+net2 --> scaler(pow(2, 14)) --> net2_num
+net3 --> scaler(pow(2, 13)) --> net3_num
+net4 --> scaler(pow(2, 12)) --> net4_num
+net5 --> scaler(pow(2, 11)) --> net5_num
+net6 --> scaler(pow(2, 10)) --> net6_num
+net7 --> scaler(pow(2, 9)) --> net7_num
+net8 --> scaler(pow(2, 8)) --> net8_num
+net9 --> scaler(pow(2, 7)) --> net9_num
+net10 --> scaler(pow(2, 6)) --> net10_num
+net11 --> scaler(pow(2, 5)) --> net11_num
+net12 --> scaler(pow(2, 4)) --> net12_num
+net13 --> scaler(pow(2, 3)) --> net13_num
+net14 --> scaler(pow(2, 2)) --> net14_num
+net15 --> scaler(pow(2, 1)) --> net15_num
+net16 --> scaler(pow(2, 0)) --> net16_num
+net1_num, net2_num, net3_num, net4_num, net5_num, net6_num, net7_num, net8_num, net9_num, net10_num, net11_num, net12_num, net13_num, net14_num, net15_num, net16_num --> add --> net_out
+net_in --> scaler(0) --> net_in_dummy
+--- Pin
+in: net_in
+out: net_out

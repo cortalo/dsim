@@ -3,9 +3,11 @@ dsim: /home/longhe/repos/dsim
 schematic: first_order_dsm
 runtime: dsm_out
 runnum: 100000
-save: dsm_in, dsm_out, net4, net1
+save: dsm_in, dsm_out, net4, net1, __h1_net11, __h1_net13, __h1_net14, __h1_het16, __h1_net17, __h1_net18
 seed: 7
 --- Parameters
+EN_DITHER = 0
+DITHER_NUM = 10
 NUM_IN = 1021
 DSM_L = 8
 DSM_Q = 2
