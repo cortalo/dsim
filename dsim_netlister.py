@@ -292,6 +292,7 @@ import control
 from tqdm import tqdm
 from engineering_notation import EngNumber
 tf = control.TransferFunction
+sqrt = math.sqrt
 """
 
 maestro, maestro_parameters, maestro_plots = read_maestro(sys.argv[1])

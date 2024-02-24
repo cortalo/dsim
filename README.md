@@ -2,6 +2,8 @@
 
 A Discrete-Time Simulator
 
+It can be understood as the value of all nets before the rising edge, and they all updates when the rising edge comes.
+
 ## Getting started
 
 Prerequists

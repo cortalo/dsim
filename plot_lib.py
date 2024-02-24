@@ -60,12 +60,12 @@ def dB20(x):
         return 20*math.log10(x)
 
 
-def pts(fig, ax, ary, color=None, subsamples=1, Fs=1, window=False):
+def pts(fig, ax, ary, color=None, subsamples=1, Fs=1, window=False, label=''):
     if window != False:
         subsamples = 1
     return ax.plot([i*subsamples/Fs for i in range(len(ary) - int(window*Fs) if (window and len(ary) > int(window*Fs)) else 0,len(ary)//subsamples)],
             [ary[i*subsamples] for i in range(len(ary) - int(window*Fs) if (window and len(ary) > int(window*Fs)) else 0,len(ary)//subsamples)],
-            color=color), 0 if window == False else [ary[i*subsamples] for i in range(len(ary) - int(window*Fs) if (window and len(ary) > int(window*Fs)) else 0,len(ary)//subsamples)], 0 if window == False else [i*subsamples/Fs for i in range(len(ary) - int(window*Fs) if (window and len(ary) > int(window*Fs)) else 0,len(ary)//subsamples)]
+                   color=color, label=label), 0 if window == False else [ary[i*subsamples] for i in range(len(ary) - int(window*Fs) if (window and len(ary) > int(window*Fs)) else 0,len(ary)//subsamples)], 0 if window == False else [i*subsamples/Fs for i in range(len(ary) - int(window*Fs) if (window and len(ary) > int(window*Fs)) else 0,len(ary)//subsamples)]
     # ax.plot([_ for _ in range(len(ary))], ary, color=color)
 
 

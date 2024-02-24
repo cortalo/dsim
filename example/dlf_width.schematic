@@ -1,0 +1,10 @@
+# Digital Loop Filter
+# With DLF_KP, DLF_KI
+--- Netlist
+net_in --> scaler(DLF_KP) --> net1
+net_in --> scaler(DLF_KI) --> integrator --> net2
+net1, net2 --> add --> net_full
+net_full --> modulus(pow(2,DLF_Width)) --> net_out
+--- Pin
+in: net_in
+out: net_out
