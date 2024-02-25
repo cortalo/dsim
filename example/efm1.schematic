@@ -1,0 +1,11 @@
+# 1st Order Error Feedback Modulator (EFM1)
+# The output average should be input / 1024
+--- Netlist
+x, s --> add --> v
+v, c --> sub --> e
+e --> delay(1) --> s
+y --> scaler(pow(2,10)) --> c
+v --> integer_divide(pow(2,10)) --> y
+--- Pin
+in: x
+out: y

@@ -207,7 +207,7 @@ def bode(fig, axs, h, fstart = 1, fend = 1e9, enable_pm=True, enable_z=False, fs
         axs[1].axvline(x=bw_calc, color='gray', linestyle='--')
     return fig, axs
 
-def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', fsample=1, sumover_N = 1, atten=1, color='C0', linewidth=1):
+def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', Fs=1, sumover_N = 1, atten=1, color='C0', linewidth=1):
     ''' plot the power spectral density
     h = lambda freq: psd; or
     h = tf; or
@@ -231,7 +231,7 @@ def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', fsample=1, sumo
         new_h = lambda f: h(f)*atten
         subplot(ax, dB10(new_h), cfg)
     elif type(h) == list:
-        yvals, xvals = fft_psd(even_ary(h), fsample)
+        yvals, xvals = fft_psd(even_ary(h), Fs)
         if sumover_N != 1:
             yvals, xvals = sumover(sumover_N)(yvals, xvals)
         if atten != 1:
@@ -259,7 +259,7 @@ def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_nois
 
 def dist_psd_plots(fig, ax, tps, Fs, psd_type='psd', sumover_N = 1, color='C0', label='', linewidth=1):
     if psd_type == 'psd':
-        return plot_psd(fig, ax, tps, fsample=Fs, sumover_N=sumover_N, color=color, label=label, linewidth=linewidth)
+        return plot_psd(fig, ax, tps, Fs=Fs, sumover_N=sumover_N, color=color, label=label, linewidth=linewidth)
     elif psd_type == 'abs_jitter':
         phase_noise(fig, ax, tps, Fout=Fs, sumover_N=sumover_N, color=color, only_noise=True, label=label, linewidth=linewidth)
     elif psd_type == 'osc_times':
@@ -312,7 +312,7 @@ def tf2poly(h):
     return f
 
 
-def tf2psd(h, var='s', sample_freq=1):
+def tf2psd(h, var='s', Fs=1):
     if isinstance(h, tf):
         cont_flag = h.isctime()
         dt = h.dt
@@ -321,9 +321,9 @@ def tf2psd(h, var='s', sample_freq=1):
             var = 's'
         else:
             var = 'z'
-            sample_freq = 1/dt
+            Fs = 1/dt
     if var == 'z':
-        psd = lambda freq: pow( abs(h(pow(math.e, complex(0, 2*math.pi*freq/sample_freq)))) ,2)
+        psd = lambda freq: pow( abs(h(pow(math.e, complex(0, 2*math.pi*freq/Fs)))) ,2)
     else:
         assert var == 's'
         psd = lambda freq: pow(abs(h(complex(0,2*math.pi*freq))),2)
