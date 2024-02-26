@@ -1,0 +1,9 @@
+# MASH-1-1
+--- Netlist
+x --> efm1 --> e1, y1
+e1 --> efm1 --> e2, y2
+y2 --> tf([1,-1],[1,0],1) --> net1
+y1, net1 --> add --> y
+--- Pin
+in: x
+out: y

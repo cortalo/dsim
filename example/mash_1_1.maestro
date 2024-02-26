@@ -1,0 +1,26 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: mash_1_1
+runtime: y
+runnum: 1000000
+saveall: True
+--- Parameters
+x_mem = []
+x = dsim.sig_init(lambda: lambda n: int(1024*sin(0.02*n*pi)), x_mem)
+--- Plots
+Fs = 1e6
+ntf = lambda z: pow(1 - pow(z,-1),2)
+S_n_out = lambda f: frac(1/12, Fs/2) * plot.tf2psd(ntf, var='z', Fs=Fs)(f)
+
+fig, ax = plt.subplots(1,2)
+plot.plot_psd(fig,ax[0],y_mem,Fs=Fs,color='C0',sumover_N=1,label='output')
+plot.plot_psd(fig,ax[0],y_mem,Fs=Fs,color='C1',sumover_N=1000,label='averaged output')
+plot.plot_psd(fig, ax[0], S_n_out, Fs=Fs, fstart = 1e1, fend=Fs/2,color='C2',label='NTF')
+ax[0].legend(fontsize=16)
+
+plot.plot_psd(fig,ax[1],y_mem,Fs=Fs,color='C1',sumover_N=10000,label='averaged output')
+plot.plot_psd(fig, ax[1], S_n_out, Fs=Fs, fstart = 1e4, fend=Fs/2,color='C2',label='NTF')
+ax[1].legend(fontsize=16)
+# ax[1].set_ylim(-100,-60)
+# ax[1].set_xlim(3e3,Fs/2)
+plt.show()

@@ -1,0 +1,8 @@
+# diff
+# 1 - z^{-1}
+--- Netlist
+x --> delay(1) --> net1
+x, net1 --> sub --> y
+--- Pin
+in: x
+out: y

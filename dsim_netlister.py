@@ -213,7 +213,26 @@ def cnet_str_block(in_net, block, out_net, maestro):
             for i in range(len(line_sep)-1):
                 replaced_str += (' --> ' + line_sep[i+1])
             new_son_schematic.append(replaced_str)
-        inout_cnet_strs = cnet_basic_str(in_net + '_caller', 'scaler(1)', hierarchie_prefix+son_pin_dict['in'], maestro) + cnet_basic_str(hierarchie_prefix+son_pin_dict['out']+'_caller', 'scaler(1)', out_net, maestro)
+        if (len(string_to_list(son_pin_dict['in'], sep=',')) == 1 and len(string_to_list(son_pin_dict['out'], sep=',')) == 1):
+            # single input single output block
+            assert len(string_to_list(in_net, sep=',')) == 1, 'pin net number does not match'
+            assert len(string_to_list(out_net, sep=',')) == 1, 'pin net number does not match'
+            inout_cnet_strs = cnet_basic_str(in_net + '_caller', 'scaler(1)', hierarchie_prefix+son_pin_dict['in'], maestro) + cnet_basic_str(hierarchie_prefix+son_pin_dict['out']+'_caller', 'scaler(1)', out_net, maestro)
+        else:
+            # multiple input or output
+            in_net_list = string_to_list(in_net, sep=',')
+            out_net_list = string_to_list(out_net, sep=',')
+            in_pin_list = string_to_list(son_pin_dict['in'], sep=',')
+            out_pin_list = string_to_list(son_pin_dict['out'], sep=',')
+            assert len(in_net_list) == len(in_pin_list), 'pin net number does not match'
+
+            assert len(out_net_list) == len(out_pin_list), 'pin net number does not match'
+            inout_cnet_strs = ''
+            for i in range(len(in_net_list)):
+                inout_cnet_strs += cnet_basic_str(in_net_list[i] + '_caller', 'scaler(1)', hierarchie_prefix+in_pin_list[i], maestro)
+            for i in range(len(out_net_list)):
+                inout_cnet_strs += cnet_basic_str(hierarchie_prefix+out_pin_list[i]+'_caller', 'scaler(1)', out_net_list[i], maestro)
+
         ret_nets, ret_cnet_strs = schematic_parser(new_son_schematic, maestro)
         return ret_nets, inout_cnet_strs + ret_cnet_strs
 
@@ -223,7 +242,8 @@ def explicit_nets(schematic):
     hi_prefix_len = len(hierarchie_prefix)
     for line in schematic:
         cur_net = string_to_list(line, '-->')[-1]
-        ret.append(cur_net)
+        cur_net_list = string_to_list(cur_net, ',')
+        ret += cur_net_list
         assert cur_net[0:hi_prefix_len] == hierarchie_prefix
         cur_net_num = str2int(cur_net[3+hi_prefix_len:])
         if cur_net[0+hi_prefix_len:3+hi_prefix_len] == 'net' and cur_net_num > max_net_num:

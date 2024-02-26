@@ -8,4 +8,4 @@ y --> scaler(pow(2,10)) --> c
 v --> integer_divide(pow(2,10)) --> y
 --- Pin
 in: x
-out: y
+out: e, y
