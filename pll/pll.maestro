@@ -1,0 +1,39 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: pll
+runtime: pll_out
+runnum: 1000000
+save: pll_out
+seed: 13
+--- Parameters
+N = 50
+Fref = 200e6
+Fosc = 10e9
+sigma_vco = 1e-15
+sigma_ref = 112.5e-15
+Kp = 1
+Kt = 1e-3
+n_vco_mem = []
+n_vco = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_vco * 1 + (1/Fosc), n_vco_mem)
+n_ref_mem = []
+n_ref = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_ref * 1 + (n/Fref), n_ref_mem)
+def ratio_func(n):
+    return 50
+ratio_mem = []
+ratio = dsim.sig_init(lambda: ratio_func , ratio_mem)
+--- Plots
+
+Snref = lambda f: pow(sigma_ref,2) / (Fref/2)
+H_ref = lambda s: frac(Kp*N*Kt*Fref,s+Kp*N*Kt*Fref) * 2*pi*Fref * N
+Lnref_out = lambda f: 0.5 * Snref(f) * plot.tf2psd(H_ref, var='s')(f)
+
+Snvco = lambda f: N*pow(sigma_vco,2) / (Fref/2)
+H_vco = lambda s: frac(Fref,s+Kp*N*Kt*Fref) * 2*pi*Fref * N
+Lnvco_out = lambda f: 0.5 * Snvco(f) * plot.tf2psd(H_vco, var='s')(f)
+Ltot = lambda f: Lnref_out(f) + Lnvco_out(f)
+
+fig, ax = plt.subplots(1,1)
+plot.phase_noise(fig, ax, pll_out_mem,Fout=Fosc, color='C0',auto_freq=True)
+plot.phase_noise(fig, ax, pll_out_mem,Fout=Fosc, sumover_N=100, color='C1', linewidth=2, auto_freq=True)
+plot.plot_psd(fig, ax, Ltot, fstart=1e4, fend=Fosc/2, color='C2', linewidth=2)
+plt.show()

@@ -1,0 +1,15 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: test_mmd
+runtime: out
+runnum: 10
+saveall: True
+--- Parameters
+clk_mem = []
+clk = dsim.sig_init(lambda: lambda n: n, clk_mem)
+ratio_mem = []
+ratio = dsim.sig_init(lambda: lambda n: n+1, ratio_mem)
+--- Plots
+print(clk_mem)
+print(ratio_mem)
+print(out_mem)

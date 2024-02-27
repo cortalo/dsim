@@ -9,7 +9,9 @@ dsim_basic = [
     re.compile('^add$'),
     re.compile('^sub$'),
     re.compile('^down_sampler\((.*)\)$'),
+    re.compile('^mmd$'),
     re.compile('^up_zoh\((.*)\)$'),
+    re.compile('^up_zoh_multi$'),
     re.compile('^delay\((.*)\)$'),
     re.compile(r'^scaler\((.*)\)$'),
     re.compile(r'^tf\((.*)\)$'),
@@ -86,7 +88,8 @@ def read_maestro(file_path):
                     key, value = line.split(': ')
                     test_info[key] = value
             elif current_section == 'parameters':
-                line = line.strip()
+                # line = line.strip()
+                line = line
                 if line:
                     parameters.append(line)
             elif current_section == 'plots':
@@ -188,6 +191,16 @@ def cnet_str_block(in_net, block, out_net, maestro):
                 else:
                     in_net_callers += (in_nets[i]+'_caller')
             return [] ,cnet_basic_str(in_net_callers, 'xor', out_net, maestro)
+        elif block == 'mmd' or block == 'up_zoh_multi':
+            in_nets = string_to_list(in_net, sep=',')
+            assert len(in_nets) == 2
+            in_net_callers = ''
+            for i in range(len(in_nets)):
+                if i != len(in_nets)-1:
+                    in_net_callers += (in_nets[i]+'_caller,')
+                else:
+                    in_net_callers += (in_nets[i]+'_caller')
+            return [] ,cnet_basic_str(in_net_callers, block, out_net, maestro)
         elif re.compile(r'^tf\((.*)\)$').match(block):
             return [], cnet_basic_str(in_net + '_caller', 'tf_proc('+block+')', out_net, maestro)
         else:

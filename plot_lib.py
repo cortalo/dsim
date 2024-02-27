@@ -5,6 +5,7 @@ import sys
 import math
 import cmath
 import types
+from engineering_notation import EngNumber
 import control
 tf=control.TransferFunction
 
@@ -240,11 +241,22 @@ def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', Fs=1, sumover_N
         subplot(ax, [[xvals[i] for i in range(len(xvals)) if yvals[i] > 0], dB10([yvals[i] for i in range(len(yvals)) if yvals[i] > 0])], cfg)
         return xvals, yvals
 
-def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_noise=False, color='C0', linewidth=1):
+def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_noise=False, color='C0', linewidth=1, auto_freq=False):
     '''
     tps is the timestamps of the oscillator (in seconds).
     '''
-    if only_noise == False:
+    if auto_freq == True:
+        Fexp = Fout
+        num1 = len(tps) - 1
+        num2 = len(tps) // 2
+        Fout = (num1 - num2) / (tps[num1] - tps[num2])
+        print("Found Fout: {}Hz plus {}Hz".format(EngNumber(Fout), EngNumber(Fout-Fexp)))
+        tmp = []
+        i = 0
+        for t in tps:
+            tmp.append( t - (i/Fout) )
+            i = i + 1
+    elif only_noise == False:
         tmp = []
         i = 0
         for t in tps:
@@ -352,6 +364,7 @@ def fft_psd(sig, Fs, window_function=None):
     N = len(sig)
     assert N%2 == 0
     sig = np.array(sig)
+    sig = sig - np.mean(sig)
     if window_function == 'blackman':
         window = np.blackman(N)
         sig = sig * window

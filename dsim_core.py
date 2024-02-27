@@ -203,6 +203,27 @@ def down_sampler(ratio_N):
         return lambda: sig_helper
     return proc_helper
 
+
+def mmd(clk_caller, ratio_caller):
+    ''' multi-modulus divider
+    it will down sample the clk_caller based on the integer number of ratio_caller
+    '''
+    sout = clk_caller
+    prev_num = 0
+    def sig_helper(idx):
+        nonlocal prev_num
+        if idx == 0:
+            prev_num = 0
+            return sout()(prev_num)
+        else:
+            ratio_num = ratio_caller()(idx-1)
+            for _ in range(ratio_num):
+                sout()(prev_num + _)
+            prev_num += ratio_num
+            return sout()(prev_num)
+    return lambda: sig_helper
+
+
 def up_zoh(ratio_N):
     '''
     up sample and ZOH
@@ -213,6 +234,31 @@ def up_zoh(ratio_N):
             return sout()(idx // ratio_N)
         return lambda: sig_helper
     return proc_helper
+
+
+def up_zoh_multi(clk_caller, ratio_caller):
+    '''up sample and ZOH, with the integer number in ratio_caller
+    '''
+    sout = clk_caller
+    prev_num = 0
+    next_num = 0
+    def sig_helper(idx):
+        nonlocal prev_num
+        nonlocal next_num
+        if idx == 0:
+            prev_num = 0
+            next_num = next_num + ratio_caller()(prev_num)
+            return sout()(prev_num)
+        elif idx < next_num:
+            return sout()(prev_num)
+        else:
+            assert idx == next_num
+            prev_num += 1
+            next_num = next_num + ratio_caller()(prev_num)
+            return sout()(prev_num)
+    return lambda: sig_helper
+
+
 
 
 def delay(num, init_num = 0):

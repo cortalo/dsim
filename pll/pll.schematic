@@ -1,0 +1,9 @@
+# pll
+--- Netlist
+n_ref, net1 --> sub --> net2
+net2 --> scaler(Kp) --> net5
+net5, ratio --> up_zoh_multi --> net6
+net6 --> scaler(Kt) --> net3
+net3, n_vco --> add --> net4
+net4 --> tf([1],[1,-1],1) --> pll_out
+pll_out, ratio --> mmd --> net1

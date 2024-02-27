@@ -1,0 +1,3 @@
+# test mmd
+--- Netlist
+clk, ratio --> up_zoh_multi --> out
