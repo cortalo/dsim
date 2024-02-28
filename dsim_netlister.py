@@ -61,6 +61,16 @@ def string_to_list(input_string, sep=','):
     # Split the string by commas and strip whitespace from each element
     return [item.strip() for item in input_string.split(sep)]
 
+
+def add_prefix(prefix, str_in):
+    str_list = string_to_list(str_in, ',')
+    ret = ''
+    ret += (prefix + str_list[0])
+    for i in range(len(str_list) - 1):
+        ret += (',' + prefix + str_list[i+1])
+    return ret
+
+
 def read_maestro(file_path):
     with open(file_path, 'r') as file:
         lines = file.readlines()
@@ -212,12 +222,12 @@ def cnet_str_block(in_net, block, out_net, maestro):
         new_son_schematic = []
         for line in son_schematic:
             line_sep = string_to_list(line, sep='-->')
-            line_sep[-1] = hierarchie_prefix + line_sep[-1]
+            line_sep[-1] = add_prefix(hierarchie_prefix, line_sep[-1])
             if len(line_sep) > 2:
                 left_nets = string_to_list(line_sep[0], sep=',')
                 new_left_nets = []
                 for i_left_net in left_nets:
-                    new_left_nets.append(hierarchie_prefix + i_left_net)
+                    new_left_nets.append(add_prefix(hierarchie_prefix, i_left_net))
                 line_sep_0_str = new_left_nets[0]
                 for i in range(len(new_left_nets)-1):
                     line_sep_0_str += (', ' + new_left_nets[i+1])

@@ -14,13 +14,9 @@ sigma_ref = 112.5e-15
 Kp = 1
 Kt = 1e-3
 n_vco_mem = []
-n_vco = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_vco * 1 + (1/Fosc), n_vco_mem)
+n_vco = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_vco * 1 + 0/Fref/50, n_vco_mem)
 n_ref_mem = []
-n_ref = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_ref * 1 + (n/Fref), n_ref_mem)
-def ratio_func(n):
-    return 50
-ratio_mem = []
-ratio = dsim.sig_init(lambda: ratio_func , ratio_mem)
+n_ref = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_ref * 1 + 0/Fref, n_ref_mem)
 --- Plots
 
 Snref = lambda f: pow(sigma_ref,2) / (Fref/2)
@@ -33,7 +29,7 @@ Lnvco_out = lambda f: 0.5 * Snvco(f) * plot.tf2psd(H_vco, var='s')(f)
 Ltot = lambda f: Lnref_out(f) + Lnvco_out(f)
 
 fig, ax = plt.subplots(1,1)
-plot.phase_noise(fig, ax, pll_out_mem,Fout=Fosc, color='C0',auto_freq=True)
-plot.phase_noise(fig, ax, pll_out_mem,Fout=Fosc, sumover_N=100, color='C1', linewidth=2, auto_freq=True)
+plot.phase_noise(fig, ax, pll_out_mem,Fout=Fosc, color='C0',only_noise=True)
+plot.phase_noise(fig, ax, pll_out_mem,Fout=Fosc, sumover_N=100, color='C1', linewidth=2, only_noise=True)
 plot.plot_psd(fig, ax, Ltot, fstart=1e4, fend=Fosc/2, color='C2', linewidth=2)
 plt.show()

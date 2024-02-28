@@ -1,0 +1,46 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: frac_pll_simp
+runtime: pll_out
+runnum: 1000000
+save: pll_out, net2
+seed: 13
+--- Parameters
+N = 50
+Fref = 200e6
+Fosc = 10e9
+sigma_vco = 1e-15
+sigma_ref = 112.5e-15
+Kp = 1
+Kt = 1e-3
+n_vco_mem = []
+n_vco = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_vco * 1 + 0/Fref/50, n_vco_mem)
+n_ref_mem = []
+n_ref = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_ref * 1 + 1/Fref, n_ref_mem)
+ratio_mem = []
+ratio = dsim.sig_init(lambda: lambda n: 127, ratio_mem)
+--- Plots
+
+Snref = lambda f: pow(sigma_ref,2) / (Fref/2)
+H_ref = lambda s: frac(Kp*N*Kt*Fref,s+Kp*N*Kt*Fref) * 2*pi*Fref * N
+Lnref_out = lambda f: 0.5 * Snref(f) * plot.tf2psd(H_ref, var='s')(f)
+
+Snvco = lambda f: N*pow(sigma_vco,2) / (Fref/2)
+H_vco = lambda s: frac(Fref,s+Kp*N*Kt*Fref) * 2*pi*Fref * N
+Lnvco_out = lambda f: 0.5 * Snvco(f) * plot.tf2psd(H_vco, var='s')(f)
+Ltot = lambda f: Lnref_out(f) + Lnvco_out(f)
+
+ntf = lambda z: pow(1 - pow(z,-1),3)
+Sndsm = lambda f: frac(1/12, Fref/2) * plot.tf2psd(ntf, var='z', Fs=Fref)(f) / Fosc / Fosc
+Ldsm_out = lambda f: 0.5 * Sndsm(f) * plot.tf2psd(H_ref, var='s')(f)
+
+fig, ax = plt.subplots(1,2)
+plot.pts(fig, ax[0], net2_mem, label='tref - tfb')
+plot.phase_noise(fig, ax[1], pll_out_mem[100000:],Fout=Fosc, color='C0',only_noise=True)
+plot.phase_noise(fig, ax[1], pll_out_mem[100000:],Fout=Fosc, sumover_N=100, color='C1', linewidth=2, only_noise=True, label='simulation: output')
+plot.plot_psd(fig, ax[1], Ltot, fstart=1e4, fend=Fosc/2, color='C2', linewidth=2, label='theory: ref plus vco output')
+plot.plot_psd(fig, ax[1], Ldsm_out, fstart=1e4, fend=Fosc/2, color='C3', linewidth=2, label='theory: dsm output')
+ax[1].set_ylim(-220,-70)
+ax[0].legend(fontsize=16)
+ax[1].legend(fontsize=16)
+plt.show()

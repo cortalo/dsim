@@ -1,0 +1,9 @@
+# frac_pll_simp
+--- Netlist
+n_ref, net6 --> sub --> net2
+net2 --> scaler(Kp) --> up_zoh(50) --> scaler(Kt) --> net3
+net3, n_vco --> add --> net4
+net4 --> tf([1],[1,-1],1) --> pll_out
+pll_out --> down_sampler(50) --> net1
+ratio --> mash_1_1_1 --> scaler(1/Fosc) --> net5
+net5, net1 --> add --> net6
