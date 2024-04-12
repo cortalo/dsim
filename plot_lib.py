@@ -241,7 +241,7 @@ def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', Fs=1, sumover_N
         subplot(ax, [[xvals[i] for i in range(len(xvals)) if yvals[i] > 0], dB10([yvals[i] for i in range(len(yvals)) if yvals[i] > 0])], cfg)
         return xvals, yvals
 
-def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_noise=False, color='C0', linewidth=1, auto_freq=False):
+def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_noise=False, color='C0', linewidth=1, auto_freq=False, integ_to=False):
     '''
     tps is the timestamps of the oscillator (in seconds).
     '''
@@ -267,6 +267,16 @@ def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_nois
 
     ret_x_vals, ret_y_vals = plot_psd(fig, ax, tmp, fend=Fout/2, line=line, label=label, Fs=Fout, sumover_N = sumover_N, atten=0.5*pow(Fout*2*math.pi, 2), color=color, linewidth=linewidth)
     ax.set_title( 'Phase Noise L' )
+    if (sumover_N == 1):
+        print("Total jitter: {}s".format(EngNumber(np.std(tmp))))
+        freq_bin = Fout / len(tmp)
+        if integ_to != False:
+            up_to_num = int(len(ret_y_vals) * (integ_to / (Fout/2) ))
+            sum_all = np.sum(ret_y_vals[:up_to_num]) * freq_bin * 2
+            jitter = math.sqrt(sum_all) / 2 / math.pi / Fout
+            print("Integrate to {} Hz, jitter: {}s".format(EngNumber(integ_to), EngNumber(jitter)))
+
+
     return ret_x_vals, ret_y_vals
 
 def dist_psd_plots(fig, ax, tps, Fs, psd_type='psd', sumover_N = 1, color='C0', label='', linewidth=1):
@@ -280,6 +290,21 @@ def dist_psd_plots(fig, ax, tps, Fs, psd_type='psd', sumover_N = 1, color='C0', 
         print('plot lib: dist_psd_plots Error! No such psd_type')
         exit()
 
+def vphase_noise(fig, ax, sig, Fs, Fosc, sumover_N=1,color='C0',label=''):
+    N = len(sig)
+    assert N % int(Fs/Fosc) == 0
+    psd_y, psd_x = fft_psd(sig, Fs)
+    tone_index = int(Fosc/(Fs/N))-1
+    tone_power = psd_y[tone_index]*(Fs/N)
+    ret_x = []
+    ret_y = []
+    for i in range(int(Fosc/2/(Fs/N))):
+        ret_x.append((i+1)*(Fs/N))
+        ret_y.append(psd_y[tone_index+1+i]/tone_power)
+    if sumover_N != 1:
+        ret_y, ret_x = sumover(sumover_N)(ret_y, ret_x)
+    ax.semilogx(ret_x, dB10(ret_y),color=color,label=label)
+    return ret_x, ret_y
 
 def jitter(tps, Fout, only_noise=False, tstab=0):
     tmp = 0
@@ -364,7 +389,7 @@ def fft_psd(sig, Fs, window_function=None):
     N = len(sig)
     assert N%2 == 0
     sig = np.array(sig)
-    sig = sig - np.mean(sig)
+    # sig = sig - np.mean(sig)
     if window_function == 'blackman':
         window = np.blackman(N)
         sig = sig * window
