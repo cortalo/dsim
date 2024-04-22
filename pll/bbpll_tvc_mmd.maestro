@@ -1,0 +1,102 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: bbpll_tvc_mmd
+runtime: pll_out
+runnum: 1000000
+saveall: True
+seed: 19
+--- Parameters
+
+N = 25
+Fref = 600e6
+Tref = 1/Fref
+Fosc = N*Fref
+Tosc = 1/Fosc
+
+Lref = -170
+sigma_ref = plot.L2jitter(Lref, Fref)
+L_dco = -160
+sigma_dco = plot.VCO_L2jitter(L_dco, Fosc, 100e6)
+
+Kvco = 200e3
+KT = (1/Fosc) - (1/(Fosc+Kvco))
+frac_num = 1
+frac_scale = 152
+Kp = 20e-3*frac_scale
+Ki = Kp/100
+
+Kbb_eq = 70e3 / frac_scale
+
+omega_c = 2*pi*10e6
+var_a = math.exp(-omega_c * Tref)
+omega_cb = 2*pi*50e6
+var_b = math.exp(-omega_cb * Tref)
+
+omega_cc = 2*pi*10e6
+var_c = math.exp(-omega_cc * Tref)
+
+
+n_dco_mem = []
+n_dco = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_dco*1, n_dco_mem)
+n_ref_mem = []
+n_ref = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_ref * 1 + (n+0.5)/Fref, n_ref_mem)
+t_dco_mem = []
+t_dco = dsim.sig_init(lambda: lambda n: 1/((25+frac_num/1024)*Fref), t_dco_mem)
+net13_mem = []
+net13 = dsim.sig_init(lambda: lambda n: -0.5, net13_mem)
+
+
+ratio_mem = []
+ratio = dsim.sig_init(lambda: lambda n: int(25 * 1024 + frac_num) , ratio_mem)
+--- Plots
+from matplotlib.ticker import EngFormatter
+
+print(EngNumber(np.std(net14_mem[int(len(net14_mem)/5):])))
+
+fig, ax = plt.subplots(2,3)
+plot.pts(fig, ax[0][0], net8_mem[int(len(net8_mem)/5):], Fs=Fref)
+# plot.pts(fig, ax[0][1], net12_mem[int(len(net12_mem)/5):], Fs=Fref)
+ax[0][1].hist(net14_mem[int(len(net14_mem)/5):], bins=200, density=True)
+plot.phase_noise(fig, ax[0][2], pll_out_mem[int(len(pll_out_mem)/5):], Fout=(25 + frac_num/1024)*Fref, color='C0', label='simulation', integ_to=100e6)
+plot.phase_noise(fig, ax[0][2], pll_out_mem[int(len(pll_out_mem)/5):], Fout=(25 + frac_num/1024)*Fref, sumover_N=50, color='C1', label='simulation', linewidth=2)
+
+Hopen_ref = lambda s: frac(1,2*pi)*frac(1,1+(s/omega_c))*Kbb_eq*(Kp*frac(1,1+(s/omega_cc)) + frac(Ki*Fref,s))*frac(2*pi*Kvco,s)
+Hclose_dco = lambda s: 1/(1+Hopen_ref(s)/N)
+Ldco = lambda f: frac((2*pi*100e6)**2 * pow(10,-16), (2*pi*f)**2)
+plot.plot_psd(fig, ax[0][2], lambda f: Ldco(f)*plot.tf2psd(Hclose_dco)(f), fstart=1e3, fend=7e9, color='C2', label='DCO output')
+Lbbq = lambda f: (1-(2/pi))/Fref
+Hclose_bbq = lambda s: (Kp*frac(1,1+(s/omega_cc)) + frac(Ki*Fref,s))*frac(2*pi*Kvco,s)/(1+Hopen_ref(s)/N)
+plot.plot_psd(fig, ax[0][2], lambda f: Lbbq(f)*plot.tf2psd(Hclose_bbq)(f), fstart=1e3, fend=7e9, color='C3', label='BB Q output')
+
+Ldsm = lambda f: frac(pow(2*pi,2), 12*Fref)*pow(2*math.sin(pi*f/Fref), 2*2)
+Hclose_dsm = lambda s: (Hopen_ref(s)/N)/(1+(Hopen_ref(s)/N))
+plot.plot_psd(fig, ax[0][2], lambda f: Ldsm(f)*plot.tf2psd(Hclose_dsm)(f), fstart=1e3, fend=7e9, color='C4', label='Divider Q output', linewidth=2)
+
+plot.plot_psd(fig, ax[1][0], lambda f: Ldsm(f)*plot.tf2psd(Hclose_dsm)(f), fstart=1e3, fend=7e9, color='C0', label='PLL Q noise output', linewidth=2)
+plot.plot_psd(fig, ax[1][0], lambda f: Ldco(f)*plot.tf2psd(Hclose_dco)(f), fstart=1e3, fend=7e9, color='C1', linewidth=2, label='DCO noise output')
+plot.plot_psd(fig, ax[1][0], lambda f: plot.tf2psd(Hclose_dsm)(f), fstart=1e3, fend=7e9, color='C2', label='Q noise transfer function', linewidth=2)
+plot.plot_psd(fig, ax[1][0], lambda f: Ldsm(f), fstart=1e3, fend=7e9, color='C3', label='MASH111 Q noise input', linewidth=2)
+
+Hclose_tobb = lambda s: (1/N/2/pi*frac(1,1+(s/omega_c)))/(1+(Hopen_ref(s)/N))
+plot.plot_psd(fig, ax[1][1], lambda f: Ldsm(f)*plot.tf2psd(Hclose_tobb)(f), fstart=1e3, fend=7e9, color='C0', label='Q noise to BB', linewidth=2)
+plot.plot_psd(fig, ax[1][1], lambda f: Ldco(f)*plot.tf2psd(Hclose_tobb)(f), fstart=1e3, fend=7e9, color='C1', label='DCO noise to BB', linewidth=2)
+plot.plot_psd(fig, ax[1][1], lambda f: plot.tf2psd(Hclose_tobb)(f), fstart=1e3, fend=7e9, color='C2', label='transfer function', linewidth=2)
+plot.plot_psd(fig, ax[1][1], lambda f: Ldsm(f), fstart=1e3, fend=7e9, color='C3', label='Q noise input', linewidth=2)
+plot.plot_psd(fig, ax[1][1], lambda f: Ldco(f), fstart=1e3, fend=7e9, color='C4', label='DCO noise input', linewidth=2)
+
+plot.plot_psd(fig, ax[1][2], net14_mem[int(len(net14_mem)/5):], Fs=Fref, color='C0', label='simulation')
+plot.plot_psd(fig, ax[1][2], net14_mem[int(len(net14_mem)/5):], Fs=Fref, color='C1', sumover_N=50, label='simulation')
+plot.plot_psd(fig, ax[1][2], lambda f: Ldsm(f)*plot.tf2psd(Hclose_tobb)(f), fstart=2e4, fend=3e8, color='C2', label='Q noise to BB', linewidth=2)
+plot.plot_psd(fig, ax[1][2], lambda f: Ldco(f)*plot.tf2psd(Hclose_tobb)(f), fstart=2e4, fend=3e8, color='C3', label='DCO noise to BB', linewidth=2)
+
+formatter = EngFormatter(unit='s')  # You can change 's' to the appropriate unit
+ax[0][0].set_title('DLF output')
+ax[0][1].set_title('Comparator Input')
+ax[0][0].xaxis.set_major_formatter(formatter)
+ax[0][1].xaxis.set_major_formatter(formatter)
+
+ax[0][2].legend(fontsize=12)
+ax[1][0].legend(fontsize=12)
+ax[1][1].legend(fontsize=12)
+ax[1][2].legend(fontsize=12)
+plt.show()

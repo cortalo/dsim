@@ -1,0 +1,69 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: bbpll_tvc
+runtime: pll_out
+runnum: 100000
+saveall: True
+seed: 13
+--- Parameters
+N = 25
+Fref = 600e6
+Tref = 1/Fref
+Fosc = N*Fref
+Tosc = 1/Fosc
+
+
+Lref = -170
+sigma_ref = plot.L2jitter(Lref, Fref)
+L_dco = -160
+sigma_dco = plot.VCO_L2jitter(L_dco, Fosc, 100e6)
+
+Kvco = 200e3
+KT = (1/Fosc) - (1/(Fosc+Kvco))
+
+Kp = 32e-3
+Ki = Kp/1000
+
+omega_c = 2*pi*10e6
+var_a = math.exp(-omega_c * Tref)
+
+omega_cb = 2*pi*50e6
+var_b = math.exp(-omega_cb * Tref)
+
+n_dco_mem = []
+n_dco = dsim.sig_init(lambda: lambda n: sqrt(N)*np.random.randn()*sigma_dco, n_dco_mem)
+n_ref_mem = []
+n_ref = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_ref * 1 + (n+0.5)/Fref, n_ref_mem)
+t_dco_mem = []
+t_dco = dsim.sig_init(lambda: lambda n: (N)*Tosc, t_dco_mem)
+n_mmd_mem = []
+n_mmd = dsim.sig_init(lambda: lambda n: sqrt(1/12)*Tosc*np.random.randn()*0, n_mmd_mem)
+net13_mem = []
+net13 = dsim.sig_init(lambda: lambda n: -0.5, net13_mem)
+
+--- Plots
+from matplotlib.ticker import EngFormatter
+
+fig, ax = plt.subplots(1,3)
+plot.pts(fig, ax[0], net8_mem, Fs=Fref)
+plot.pts(fig, ax[1], net12_mem, Fs=Fref)
+plot.phase_noise(fig, ax[2], pll_out_mem[25000:], Fout=Fref, color='C0')
+plot.phase_noise(fig, ax[2], pll_out_mem[25000:], Fout=Fref, sumover_N=50, color='C1')
+
+Hopen_ref = lambda s: frac(1,Tref)*frac(1,1+(s/omega_c))*frac(1,1+(s/omega_cb))*100e3*Kp*N*KT*(1/s)*(1/Tref)
+Hclose_ref = lambda s: Hopen_ref(s)/(1+Hopen_ref(s))
+plot.plot_psd(fig, ax[2], lambda f: pow(10,Lref/10)*plot.tf2psd(Hclose_ref)(f), color='C2', fstart=5e5, fend=300e6)
+Hclose_dco = lambda s: frac(1,s*Tref)/(1+Hopen_ref(s))
+
+Hopen_ref_1 = lambda s: frac(1,2*pi)*frac(1,1+(s/omega_c))*frac(1,1+(s/omega_cb))*100e3*frac(2*pi*Kvco,s)
+
+Hclose_dco_1 = lambda s: N/(1+N*Hopen_ref_1(s))
+Ldco = lambda f: frac((2*pi*100e6)**2 * pow(10,-16), (2*pi*f)**2)
+
+plot.plot_psd(fig, ax[2], lambda f: Ldco(f)*plot.tf2psd(Hclose_dco_1)(f), color='C3', fstart=5e5, fend=300e6)
+
+formatter = EngFormatter(unit='s')  # You can change 's' to the appropriate unit
+ax[0].xaxis.set_major_formatter(formatter)
+ax[1].xaxis.set_major_formatter(formatter)
+
+plt.show()

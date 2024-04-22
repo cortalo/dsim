@@ -56,3 +56,7 @@ If, for example, `block_name_1` is not a basic block, they DSIM will first try t
 So, you can easily maintain hierarchical structure of your design and schematic.
 
 Also, `net_name` start with `__` (double underscore) is reserved. Please do not use such a name in your schematic.
+
+## dsim_core
+
+`tf([1,-1],[1,0],1)` represent transfer function `(z-1)/(z+0)`.

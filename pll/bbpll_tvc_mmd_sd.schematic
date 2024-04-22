@@ -1,0 +1,21 @@
+# bbpll_tvc_mmd_sd
+--- Netlist
+n_dco, net15, t_dco --> add --> net1
+net1 --> tf([1],[1,-1],1) --> pll_out
+n_ref, net10 --> sub --> net4
+net4 --> scaler(1/Tref) --> tf([1-var_a],[1,-var_a],1) --> net12
+net12, net13 --> add --> net14
+
+net14, net18 --> sub --> net16
+net16 --> scaler(1) --> tf([1],[1,-1],1) --> net17
+net17 --> bbpd --> net5
+# net17 --> scaler(Kbb_eq) --> net5
+net5 --> scaler(0.02) --> net18
+
+net5 --> scaler(Kp) --> tf([1-var_c],[1,-var_c],1) --> net6
+net5 --> tf([Ki, 0],[1,-1],1) --> net7
+net6, net7 --> add --> net8
+net8, mash_o --> up_zoh_multi --> net9
+net9 --> scaler(KT) --> net15
+pll_out, mash_o --> mmd --> net10
+ratio --> mash_1_1_1 --> mash_o

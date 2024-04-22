@@ -10,6 +10,9 @@ import control
 tf=control.TransferFunction
 
 
+L2jitter = lambda L, F: math.sqrt(pow(10, L/10) * F * pow(1/(2*math.pi*F),2)) # White PN
+VCO_L2jitter = lambda L, Fout, Fm: math.sqrt(pow(10, L/10)*pow(Fm, 2) * pow(Fout, -3))
+
 def from_to(n_from, n_to, s_type):
     '''Return a list, either linear or decade
 
@@ -61,12 +64,12 @@ def dB20(x):
         return 20*math.log10(x)
 
 
-def pts(fig, ax, ary, color=None, subsamples=1, Fs=1, window=False, label=''):
+def pts(fig, ax, ary, color=None, subsamples=1, Fs=1, window=False, label='', linestyle='-'):
     if window != False:
         subsamples = 1
     return ax.plot([i*subsamples/Fs for i in range(len(ary) - int(window*Fs) if (window and len(ary) > int(window*Fs)) else 0,len(ary)//subsamples)],
             [ary[i*subsamples] for i in range(len(ary) - int(window*Fs) if (window and len(ary) > int(window*Fs)) else 0,len(ary)//subsamples)],
-                   color=color, label=label), 0 if window == False else [ary[i*subsamples] for i in range(len(ary) - int(window*Fs) if (window and len(ary) > int(window*Fs)) else 0,len(ary)//subsamples)], 0 if window == False else [i*subsamples/Fs for i in range(len(ary) - int(window*Fs) if (window and len(ary) > int(window*Fs)) else 0,len(ary)//subsamples)]
+                   color=color, label=label, linestyle=linestyle), 0 if window == False else [ary[i*subsamples] for i in range(len(ary) - int(window*Fs) if (window and len(ary) > int(window*Fs)) else 0,len(ary)//subsamples)], 0 if window == False else [i*subsamples/Fs for i in range(len(ary) - int(window*Fs) if (window and len(ary) > int(window*Fs)) else 0,len(ary)//subsamples)]
     # ax.plot([_ for _ in range(len(ary))], ary, color=color)
 
 
