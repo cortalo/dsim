@@ -16,6 +16,7 @@ dsim_basic = [
     re.compile(r'^scaler\((.*)\)$'),
     re.compile(r'^tf\((.*)\)$'),
     re.compile('^bbpd$'),
+    re.compile('^comparator$'),
     re.compile(r'^integer_divide\((.*)\)$'),
     re.compile(r'^modulus\((.*)\)$'),
     re.compile('^nand$'),

@@ -5,8 +5,12 @@ net1 --> tf([1],[1,-1],1) --> pll_out
 n_ref, net10 --> sub --> net4
 net4 --> scaler(1/Tref) --> tf([1-var_a],[1,-var_a],1) --> net12
 net12, net13 --> add --> net14
-net14 --> bbpd --> net5
-# net14 --> scaler(Kbb_eq) --> net5
+
+# net14 --> bbpd --> net5
+
+net14 --> scaler(Kbb_eq) --> net16
+net16, net17 --> add --> net5
+
 net5 --> scaler(Kp) --> tf([1-var_c],[1,-var_c],1) --> net6
 net5 --> tf([Ki, 0],[1,-1],1) --> net7
 net6, net7 --> add --> net8

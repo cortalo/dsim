@@ -1,0 +1,29 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: mash111_tb
+runtime: mash_o
+runnum: 200000
+saveall: True
+seed: 19
+--- Parameters
+ratio_mem = []
+ratio = dsim.sig_init(lambda: lambda n: int(1) , ratio_mem)
+--- Plots
+from matplotlib.ticker import EngFormatter
+
+Fref = 100e6
+
+fig, ax = plt.subplots(1,2)
+
+# Figure 1
+cur_ax = ax[0]
+plot.pts(fig, cur_ax,mash_o_mem[int(len(mash_o_mem)/5*0):], Fs=Fref)
+formatter = EngFormatter(unit='s')  # You can change 's' to the appropriate unit
+cur_ax.set_title('DLF output')
+cur_ax.xaxis.set_major_formatter(formatter)
+
+# Figure 2
+cur_ax = ax[1]
+plot.plot_psd(fig, cur_ax, mash_o_mem, Fs=Fref)
+
+plt.show()

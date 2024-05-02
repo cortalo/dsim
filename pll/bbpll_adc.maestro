@@ -1,0 +1,117 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: bbpll_adc
+runtime: net10
+runnum: 20000
+saveall: True
+seed: 19
+--- Parameters
+
+N = 25
+Fref = 600e6
+Tref = 1/Fref
+Fosc = N*Fref
+Tosc = 1/Fosc
+
+Lref = -167
+sigma_ref = plot.L2jitter(Lref, Fref)
+L_dco = -160
+sigma_dco = plot.VCO_L2jitter(L_dco, Fosc, 100e6)
+
+Kvco = 10e6
+KT = (1/Fosc) - (1/(Fosc+Kvco))
+frac_num = 1
+Kp = 0.1
+Ki = Kp/1000
+
+adc_fb_gain = 0.01
+adc_ff_gain = 1
+cmp_gain = 1/adc_fb_gain/adc_ff_gain
+Hadc = lambda s: frac(adc_ff_gain*Fref/s*cmp_gain, 1+adc_fb_gain*adc_ff_gain*Fref/s*cmp_gain)
+
+print("Kp: {}".format(EngNumber(Kp)))
+print("Ki: {}".format(EngNumber(Ki)))
+print("ADC BW: {}".format(EngNumber(Fref/2/pi)))
+
+
+omega_c = 2*pi*10e6
+var_a = math.exp(-omega_c * Tref)
+
+omega_cc = 2*pi*10e6
+var_c = math.exp(-omega_cc * Tref)
+
+
+n_dco_mem = []
+n_dco = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_dco*1, n_dco_mem)
+n_ref_mem = []
+n_ref = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_ref * 1 + (n)/Fref, n_ref_mem)
+t_dco_mem = []
+t_dco = dsim.sig_init(lambda: lambda n: 1/((25+frac_num/1024)*Fref), t_dco_mem)
+net13_mem = []
+net13 = dsim.sig_init(lambda: lambda n: -(n%2), net13_mem)
+net16_mem = []
+net16 = dsim.sig_init(lambda: lambda n: 0.005*1, net16_mem)
+net22_mem = []
+net22 = dsim.sig_init(lambda: lambda n: np.random.randn()*1/sqrt(8)*1, net22_mem)
+
+
+ratio_mem = []
+ratio = dsim.sig_init(lambda: lambda n: int(25 * 1024 + frac_num) , ratio_mem)
+--- Plots
+from matplotlib.ticker import EngFormatter
+
+
+fig, ax = plt.subplots(2,3)
+
+# Figure 1
+cur_ax = ax[0][0]
+plot.pts(fig, cur_ax, net8_mem[int(len(net8_mem)/5*0):], Fs=Fref)
+formatter = EngFormatter(unit='s')  # You can change 's' to the appropriate unit
+cur_ax.set_title('DLF output')
+cur_ax.xaxis.set_major_formatter(formatter)
+
+# Figure 2
+cur_ax = ax[0][1]
+cur_ax.hist(net17_mem[int(len(net19_mem)/5):], bins=200, density=True)
+cur_ax.set_title('Comparator Input')
+
+# Figure 3
+cur_ax = ax[0][2]
+plot.phase_noise(fig, cur_ax, pll_out_mem[int(len(pll_out_mem)/5):], Fout=(25 + frac_num/1024)*Fref, color='C0', label='simulation', integ_to=6e5)
+plot.phase_noise(fig, cur_ax, pll_out_mem[int(len(pll_out_mem)/5):], Fout=(25 + frac_num/1024)*Fref, sumover_N=50, color='C1', label='simulation', linewidth=2)
+
+Hopen_ref = lambda s: frac(1,2*pi)*frac(1,1+(s/omega_c))*Hadc(s)*(Kp*frac(1,1+(s/omega_cc)) + frac(Ki*Fref,s))*frac(2*pi*Kvco,s)
+
+# DCO noise output
+Hclose_dco = lambda s: 1/(1+Hopen_ref(s)/N)
+Ldco = lambda f: frac((2*pi*100e6)**2 * pow(10,-16), (2*pi*f)**2)
+Ldco_out = lambda f: Ldco(f)*plot.tf2psd(Hclose_dco)(f)
+plot.plot_psd(fig, cur_ax, Ldco_out, fstart=1e3, fend=7e9, color='C2', label='dco output', linewidth=2)
+
+# reference noise output
+Lref_f = lambda f: pow(10, Lref/10)
+Hclose_ref = lambda s: Hopen_ref(s)/(1+Hopen_ref(s)/N)
+Lref_out = lambda f: Lref_f(f)*plot.tf2psd(Hclose_ref)(f)
+plot.plot_psd(fig, cur_ax, Lref_out, fstart=1e3, fend=7e9, color='C4', label='ref output', linewidth=2)
+
+# comparator noise output
+Lbbq = lambda f: (1/8)/Fref
+Hclose_bbq = lambda s: (Kp*frac(1,1+(s/omega_cc)) + frac(Ki*Fref,s))*frac(2*pi*Kvco,s)/(1+Hopen_ref(s)/N)
+Hdsm_ns = lambda s: 1/(1+Fref/s)
+Lbbq_out = lambda f: Lbbq(f)*plot.tf2psd(Hclose_bbq)(f)*plot.tf2psd(Hdsm_ns)(f)
+plot.plot_psd(fig, cur_ax, Lbbq_out, fstart=1e3, fend=7e9, color='C3', label='comparator Q output', linewidth=2)
+
+
+# divider noise output
+Ldsm = lambda f: frac(pow(2*pi,2), 12*Fref)*pow(2*math.sin(pi*f/Fref), 2*2)
+Hclose_dsm = lambda s: (Hopen_ref(s)/N)/(1+(Hopen_ref(s)/N))
+plot.plot_psd(fig, cur_ax, lambda f: Ldsm(f)*plot.tf2psd(Hclose_dsm)(f), fstart=1e3, fend=7e9, color='C5', label='divider Q output', linewidth=2)
+cur_ax.legend(fontsize=12)
+
+# Figure 4 and 5
+cur_ax = [ax[1][0], ax[1][1]]
+plot.bode(fig, cur_ax, lambda s: Hopen_ref(s)/N)
+
+
+plt.subplots_adjust(hspace=0.2)
+plt.show()
