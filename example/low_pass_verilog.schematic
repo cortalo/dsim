@@ -1,0 +1,13 @@
+# digital low pass filter
+# assume x_i is integer
+# assume coeff_i is 8 bit fractional number
+--- Netlist
+y_o --> delay(1) --> y_dly
+lambda n: 256 --> full_num
+full_num, coeff_i --> sub --> mul_1_b
+x_i, mul_1_b --> mul --> integer_divide(256) --> mul_1_y_int
+y_dly, coeff_i --> mul --> integer_divide(256) --> mul_2_y_int
+mul_1_y_int, mul_2_y_int --> add --> y_o
+--- Pin
+in: x_i, coeff_i
+out: y_o

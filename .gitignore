@@ -1,2 +1,5 @@
 __pycache__/
 .dsim.py
+*.pkl
+*.csv
+*.vcsv

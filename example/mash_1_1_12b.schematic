@@ -1,0 +1,9 @@
+# MASH-1-1
+--- Netlist
+x --> efm1_12b --> e1, y1
+e1 --> efm1_12b --> e2, y2
+y2 --> diff --> net1
+y1, net1 --> add --> y
+--- Pin
+in: x
+out: y

@@ -21,10 +21,10 @@ sigma_dco = plot.VCO_L2jitter(L_dco, Fosc, 100e6)
 Kvco = 10e6
 KT = (1/Fosc) - (1/(Fosc+Kvco))
 frac_num = 1
-Kp = 0.1
+Kp = 0.1*1
 Ki = Kp/1000
 
-adc_fb_gain = 0.01
+adc_fb_gain = 0.01*1
 adc_ff_gain = 1
 cmp_gain = 1/adc_fb_gain/adc_ff_gain
 Hadc = lambda s: frac(adc_ff_gain*Fref/s*cmp_gain, 1+adc_fb_gain*adc_ff_gain*Fref/s*cmp_gain)
@@ -71,9 +71,11 @@ cur_ax.set_title('DLF output')
 cur_ax.xaxis.set_major_formatter(formatter)
 
 # Figure 2
-cur_ax = ax[0][1]
-cur_ax.hist(net17_mem[int(len(net19_mem)/5):], bins=200, density=True)
+cur_ax = ax[1][2]
+cur_ax.hist(net19_mem[int(len(net19_mem)/5):], bins=200, density=True)
 cur_ax.set_title('Comparator Input')
+formatter = EngFormatter(unit='V')  # You can change 's' to the appropriate unit
+cur_ax.xaxis.set_major_formatter(formatter)
 
 # Figure 3
 cur_ax = ax[0][2]
@@ -97,7 +99,7 @@ plot.plot_psd(fig, cur_ax, Lref_out, fstart=1e3, fend=7e9, color='C4', label='re
 # comparator noise output
 Lbbq = lambda f: (1/8)/Fref
 Hclose_bbq = lambda s: (Kp*frac(1,1+(s/omega_cc)) + frac(Ki*Fref,s))*frac(2*pi*Kvco,s)/(1+Hopen_ref(s)/N)
-Hdsm_ns = lambda s: 1/(1+Fref/s)
+Hdsm_ns = lambda s: 1/(1+Fref/s*adc_ff_gain*cmp_gain*adc_fb_gain)
 Lbbq_out = lambda f: Lbbq(f)*plot.tf2psd(Hclose_bbq)(f)*plot.tf2psd(Hdsm_ns)(f)
 plot.plot_psd(fig, cur_ax, Lbbq_out, fstart=1e3, fend=7e9, color='C3', label='comparator Q output', linewidth=2)
 
@@ -112,6 +114,13 @@ cur_ax.legend(fontsize=12)
 cur_ax = [ax[1][0], ax[1][1]]
 plot.bode(fig, cur_ax, lambda s: Hopen_ref(s)/N)
 
+# Figure 6
+cur_ax = ax[0][1]
+cur_ax.hist(net17_mem[int(len(net17_mem)/5):], bins=200, density=True)
+cur_ax.set_title('TVC output')
+formatter = EngFormatter(unit='V')  # You can change 's' to the appropriate unit
+cur_ax.xaxis.set_major_formatter(formatter)
 
-plt.subplots_adjust(hspace=0.2)
+
+plt.subplots_adjust(hspace=0.3)
 plt.show()

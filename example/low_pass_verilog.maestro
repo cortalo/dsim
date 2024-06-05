@@ -1,0 +1,17 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: low_pass_verilog_tb
+runtime: y_o
+runnum: 30
+saveall: True
+--- Parameters
+x_i_mem = []
+x_i = dsim.sig_init(lambda: lambda n: 1024, x_i_mem)
+coeff_i_mem = []
+coeff_i = dsim.sig_init(lambda: lambda n: 230, coeff_i_mem)
+--- Plots
+print(y_o_mem)
+fig, ax = plt.subplots(1,1)
+cur_ax = ax
+plot.pts(fig, cur_ax, y_o_mem)
+plt.show()

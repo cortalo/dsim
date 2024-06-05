@@ -1,0 +1,129 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: bbpll_tfb
+runtime: net4
+runnum: 40000
+# runnum: 10
+saveall: True
+seed: 19
+--- Parameters
+
+N = 20
+Fref = 600e6
+Tref = 1/Fref
+Fosc = N*Fref
+Tosc = 1/Fosc
+
+Lref = -166
+sigma_ref = plot.L2jitter(Lref, Fref)
+Ldco_num = -127
+Ldco_offset = 1e6
+sigma_dco = plot.VCO_L2jitter(Ldco_num, Fosc, Ldco_offset)
+
+print("reference jitter: {}s".format(EngNumber(sigma_ref)))
+print("dco jitter: {}s".format(EngNumber(sigma_dco)))
+
+
+Kvco = 200e3
+KT = (1/Fosc) - (1/(Fosc+Kvco))
+frac_num = 1
+Kp = 1
+Ki = Kp/1000
+Fdsm = Fref
+
+omega_c = 2*pi*13e6
+var_a = math.exp(-omega_c * Tref)
+
+omega_d = 2*pi*10e6
+var_d = math.exp(-omega_d * Tref)
+fb_gain = 0.01
+ff_gain = 1
+cmp_gain = 100
+
+
+Kp_verilog = int(Kp*4096/2)
+Ki_verilog = int(Ki*4096/2)
+
+print("Kp: {}".format(EngNumber(Kp)))
+print("Ki: {}".format(EngNumber(Ki)))
+print("Kp_verilog: {}".format(EngNumber(Kp_verilog)))
+print("Ki_verilog: {}".format(EngNumber(Ki_verilog)))
+print("pole frequency: {}".format(EngNumber(omega_c/2/pi)))
+print("zero frequency: {}".format(EngNumber(frac(Ki*Fref,Kp)/2/pi)))
+print(var_d)
+print(var_d*pow(2,8))
+
+--- Plots
+
+Hadc_ff = lambda s: frac(1,2*pi)*frac(1,1+(s/omega_c))*cmp_gain*(Fref*ff_gain/s)
+Hadc_loop = lambda s: Hadc_ff(s) * fb_gain
+Hadc = lambda s: Hadc_ff(s) / (1 + Hadc_loop(s))
+Kp_tf = lambda s: Kp * frac(1,1+(s/omega_d)) * frac(1,1+(s/omega_d))
+Hopen_ref = lambda s: Hadc(s)*(Kp_tf(s) + frac(Ki*Fref,s))*frac(2*pi*Kvco,s)
+Hloop = lambda s: Hopen_ref(s) / N
+
+from matplotlib.ticker import EngFormatter
+
+fig, ax = plt.subplots(2,3)
+
+# Figure 1
+cur_ax = ax[0][0]
+plot.pts(fig, cur_ax, dlf_out_mem[int(len(dlf_out_mem)/5*0):], Fs=Fref)
+formatter = EngFormatter(unit='s')  # You can change 's' to the appropriate unit
+cur_ax.set_title('DLF output')
+cur_ax.xaxis.set_major_formatter(formatter)
+
+# Figure 2
+cur_ax = ax[0][1]
+cur_ax.hist(net25_mem[int(len(net25_mem)/5):], bins=200, density=True)
+cur_ax.set_title('comparator input')
+formatter = EngFormatter(unit='s')  # You can change 's' to the appropriate unit
+cur_ax.xaxis.set_major_formatter(formatter)
+
+# Figure 3
+cur_ax = ax[0][2]
+plot.phase_noise(fig, cur_ax, pll_out_mem[int(len(pll_out_mem)/5):], Fout=(N + frac_num/1024)*Fref, color='C0', label='simulation', integ_to=100e6)
+plot.phase_noise(fig, cur_ax, pll_out_mem[int(len(pll_out_mem)/5):], Fout=(N + frac_num/1024)*Fref, sumover_N=50, color='C1', label='simulation', linewidth=2)
+
+
+# DCO noise output
+Hclose_dco = lambda s: 1/(1+Hloop(s))
+Ldco = lambda f: frac((2*pi*Ldco_offset)**2 * pow(10,Ldco_num/10), (2*pi*f)**2)
+Ldco_out = lambda f: Ldco(f)*plot.tf2psd(Hclose_dco)(f)
+plot.plot_psd(fig, cur_ax, Ldco_out, fstart=1e3, fend=7e9, color='C2', label='dco output', linewidth=2)
+
+# reference noise output
+Lref_f = lambda f: pow(10, Lref/10)
+Hclose_ref = lambda s: Hopen_ref(s)/(1+Hopen_ref(s)/N)
+Lref_out = lambda f: Lref_f(f)*plot.tf2psd(Hclose_ref)(f)
+plot.plot_psd(fig, cur_ax, Lref_out, fstart=1e3, fend=7e9, color='C3', label='ref output', linewidth=2)
+
+
+# comparator noise output
+Lbbq = lambda f: (1/8)/(Fdsm)
+Hclose_bbq = lambda s: (Kp_tf(s) + frac(Ki*Fref,s))*frac(2*pi*Kvco,s)/(1+Hopen_ref(s)/N)
+Hdsm_ns = lambda s: 1/(1+Hadc_loop(s))
+Lbbq_out = lambda f: Lbbq(f)*plot.tf2psd(Hclose_bbq)(f)*plot.tf2psd(Hdsm_ns)(f)
+plot.plot_psd(fig, cur_ax, Lbbq_out, fstart=1e3, fend=7e9, color='C4', label='comparator Q output', linewidth=2)
+
+# dco quantization noise
+Fdsm_dco = Fref
+Ldco_q = lambda f: (1/12)/(Fdsm_dco)
+Hclose_dco_q = lambda s: frac(2*pi*Kvco,s)/(1+Hopen_ref(s)/N)
+Hdco_q_ns = lambda z: pow(1 - pow(z,-1),1)
+Ldco_q_out = lambda f: Ldco_q(f)*plot.tf2psd(Hclose_dco_q)(f)*plot.tf2psd(Hdco_q_ns, var='z', Fs=Fdsm_dco)(f)
+# Ldco_q_out = lambda f: Ldco_q(f)*plot.tf2psd(Hclose_dco_q)(f)
+plot.plot_psd(fig, cur_ax, Ldco_q_out, fstart=1e3, fend=7e9, color='C6', label='DCO Q output', linewidth=2)
+cur_ax.legend(fontsize=12)
+
+# Figure 4 and 5
+cur_ax = [ax[1][0], ax[1][1]]
+plot.bode(fig, cur_ax, lambda s: Hloop(s))
+
+# Figure 6
+cur_ax = ax[1][2]
+
+fig.suptitle('Using Second Order DSM')
+
+plt.subplots_adjust(hspace=0.3)
+plt.show()

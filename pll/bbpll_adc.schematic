@@ -7,8 +7,8 @@ net4 --> scaler(1/Tref) --> tf([1-var_a],[1,-var_a],1) --> net12
 net12, net16 --> add --> net17
 
 net17, net20 --> sub --> net18
-net18 --> tf([1],[1,-1],1) --> net19
-net14 --> scaler(0.01) --> net20
+net18 --> tf([adc_ff_gain],[1,-1],1) --> net19
+net14 --> scaler(adc_fb_gain) --> net20
 
 net19 --> comparator --> net14
 

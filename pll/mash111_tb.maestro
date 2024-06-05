@@ -2,12 +2,12 @@
 dsim: /home/longhe/repos/dsim
 schematic: mash111_tb
 runtime: mash_o
-runnum: 200000
+runnum: 2000
 saveall: True
 seed: 19
 --- Parameters
 ratio_mem = []
-ratio = dsim.sig_init(lambda: lambda n: int(1) , ratio_mem)
+ratio = dsim.sig_init(lambda: lambda n: int(3) , ratio_mem)
 --- Plots
 from matplotlib.ticker import EngFormatter
 

@@ -117,6 +117,13 @@ def sub_sig(sig_caller, sub_sig_caller):
         return sig_caller()(idx) - sub_sig_caller()(idx)
     return lambda : sig_helper
 
+
+def mul_sig(sig_caller, sub_sig_caller):
+    def sig_helper(idx):
+        return sig_caller()(idx) * sub_sig_caller()(idx)
+    return lambda : sig_helper
+
+
 def nand(sig_caller_list):
     def sig_helper(idx):
         found_zero = False
@@ -298,7 +305,7 @@ def bbpd(sig_caller):
 def comparator(sig_caller):
     sout = sig_caller
     def sig_helper(idx):
-        if sout()(idx) > 0.01:
+        if sout()(idx) > 0:
             return 1
         else:
             return 0

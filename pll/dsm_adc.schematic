@@ -1,0 +1,6 @@
+# dsm_adc
+--- Netlist
+net17, net20 --> sub --> net18
+net18 --> tf([adc_ff_gain],[1,-1],1) --> net19
+net19 --> comparator --> net14
+net14 --> scaler(adc_fb_gain) --> net20

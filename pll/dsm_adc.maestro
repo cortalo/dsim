@@ -1,0 +1,31 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: dsm_adc
+runtime: net20
+runnum: 20000
+saveall: True
+seed: 19
+--- Parameters
+
+Fref = 600e6
+adc_fb_gain = 0.01
+adc_ff_gain = 1
+cmp_gain = 1/adc_fb_gain/adc_ff_gain
+Hadc = lambda s: frac(adc_ff_gain*Fref/s*cmp_gain, 1+adc_fb_gain*adc_ff_gain*Fref/s*cmp_gain)
+
+net17_mem = []
+net17 = dsim.sig_init(lambda: lambda n: 0.009 , net17_mem)
+
+--- Plots
+from matplotlib.ticker import EngFormatter
+
+
+fig, ax = plt.subplots(1,1)
+
+# Figure 1
+cur_ax = ax
+plot.pts(fig, cur_ax, net14_mem[int(len(net14_mem)/5*0):], Fs=Fref)
+formatter = EngFormatter(unit='s')  # You can change 's' to the appropriate unit
+cur_ax.set_title('DLF output')
+cur_ax.xaxis.set_major_formatter(formatter)
+plt.show()

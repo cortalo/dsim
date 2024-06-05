@@ -8,6 +8,7 @@ hierarchie_prefix = ''
 dsim_basic = [
     re.compile('^add$'),
     re.compile('^sub$'),
+    re.compile('^mul$'),
     re.compile('^down_sampler\((.*)\)$'),
     re.compile('^mmd$'),
     re.compile('^up_zoh\((.*)\)$'),
@@ -182,6 +183,16 @@ def cnet_str_block(in_net, block, out_net, maestro):
                 else:
                     in_net_callers += (in_nets[i]+'_caller')
             return [] ,cnet_basic_str(in_net_callers, 'sub_sig', out_net, maestro)
+        elif block == 'mul':
+            in_nets = string_to_list(in_net, sep=',')
+            assert len(in_nets) == 2
+            in_net_callers = ''
+            for i in range(len(in_nets)):
+                if i != len(in_nets)-1:
+                    in_net_callers += (in_nets[i]+'_caller,')
+                else:
+                    in_net_callers += (in_nets[i]+'_caller')
+            return [] ,cnet_basic_str(in_net_callers, 'mul_sig', out_net, maestro)
         elif block == 'nand':
             in_nets = string_to_list(in_net, sep=',')
             assert len(in_nets) >= 2

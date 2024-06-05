@@ -1,0 +1,55 @@
+# bbpll_tfb
+--- Netlist
+n_dco, net15, t_dco --> add --> net1
+net1 --> tf([1],[1,-1],1) --> pll_out
+n_ref, net10 --> sub --> net4
+net4, net24 --> sub --> net23
+net23 --> scaler(1/Tref) --> tf([1-var_a],[1,-var_a],1) --> net12
+net14 --> scaler(fb_gain*Tref/2/pi) --> net24
+
+
+# comparator or gain model
+net12 --> tf([ff_gain],[1,-1],1) --> net25
+net25 --> comparator --> net14
+# net25 --> scaler(cmp_gain) --> net14
+
+
+# # analog loop filter
+# net14, net13 --> add --> net5
+# net5 --> scaler(Kp) --> tf([1-var_d],[1,-var_d],1) --> tf([1-var_d],[1,-var_d],1) --> net6
+# net5 --> tf([Ki, 0],[1,-1],1) --> net7
+# net6, net7 --> add --> dlf_analog_pre_out
+# dlf_analog_pre_out --> scaler(4096) --> dlf_out
+
+# digital loop filter
+net14 --> delay(1) --> bbpd --> scaler(Kp_verilog) --> kp_full_in
+net14 --> delay(1) --> bbpd --> scaler(Ki_verilog) --> ki_full_in
+kp_full_in, lp_coeff --> low_pass_verilog --> lp_out_1
+lp_out_1, lp_coeff --> low_pass_verilog --> lp_out_2
+ki_full_in --> integrator --> integ_out
+lp_out_2, integ_out --> add --> dlf_out
+
+
+# use one of the dsm to control dco
+dlf_out --> efm1_12b --> emf1_error, net8
+# dlf_out --> mash_1_1_12b --> net8
+
+# # mimic dco quantization noise
+# dlf_out --> scaler(1/4096) --> dlf_actual_out
+# dlf_actual_out, dco_q_noise --> add --> net8
+# net22 --> tf([1,-1],[1,0],1) --> dco_q_noise
+
+
+net8, mash_o --> up_zoh_multi --> net9
+net9 --> scaler(KT) --> net15
+pll_out, mash_o --> mmd --> net10
+ratio --> mash_1_1_1 --> mash_o
+
+
+lambda n: np.random.randn()*sigma_dco*1 --> n_dco
+lambda n: np.random.randn()*sigma_ref*1 + (n)/Fref --> n_ref
+lambda n: 1/((N+frac_num/1024)*Fref + 0.2*Kvco) --> t_dco
+lambda n: -0.5 --> net13
+lambda n: np.random.randn()/sqrt(12)*0 --> net22
+lambda n: 230 --> lp_coeff
+lambda n: int(N * 1024 + frac_num) --> ratio

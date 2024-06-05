@@ -1,0 +1,3 @@
+# digital low pass filter TB
+--- Netlist
+x_i, coeff_i --> low_pass_verilog --> y_o
