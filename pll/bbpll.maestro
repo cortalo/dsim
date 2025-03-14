@@ -11,7 +11,7 @@ Fref = 10e6
 Tref = 1/Fref
 Fosc = N*Fref
 Tosc = 1/Fosc
-sigma_ref = 1e-12
+sigma_ref = 10e-12
 sigma_dco = 100e-12
 KT = 10e-12
 Kp = 10
@@ -27,11 +27,30 @@ print("expected output jitter: {}".format(EngNumber(sigma_out)))
 
 Hdlf = lambda z: Kp + frac(Ki,1-(1/z))
 Hloop = lambda z: Kbpd * Hdlf(z) * N * KT * frac(1,z-1)
+Sref = lambda f: sigma_ref**2 / (Fref/2)
+Sdco = lambda f: sigma_dco**2 / (Fref/2) * N
+Sq = lambda f: (1 - frac(2,pi)) / (Fref/2)
+Href = lambda z: frac(Hloop(z), 1+Hloop(z))
+Hdco = lambda z: frac(frac(1,z-1), 1+Hloop(z))
+Hq = lambda z: frac(Hloop(z)/Kbpd, 1+Hloop(z))
+Sout_ref = lambda f: Sref(f)*plot.tf2psd(Href, var='z', Fs=Fref)(f)
+Sout_dco = lambda f: Sdco(f)*plot.tf2psd(Hdco, var='z', Fs=Fref)(f)
+Sout_q = lambda f: Sq(f)*plot.tf2psd(Hq, var='z', Fs=Fref)(f)
+Lout_ref = lambda f: Sout_ref(f)*pow(2*pi/Tosc,2)/2
+Lout_dco = lambda f: Sout_dco(f)*pow(2*pi/Tosc,2)/2
+Lout_q = lambda f: Sout_q(f)*pow(2*pi/Tosc,2)/2
+
+
+
 
 from matplotlib.ticker import EngFormatter
 fig, ax = plt.subplots(1,1)
-plot.phase_noise(fig, ax, pll_out_mem[20000:], Fout=Fref, only_noise=True, color='C0')
-plot.phase_noise(fig, ax, pll_out_mem[20000:], Fout=Fref, only_noise=True, sumover_N=50, color='C1')
+plot.phase_noise(fig, ax, pll_out_mem[20000:], Fout=Fosc, only_noise=True, color='C0')
+plot.phase_noise(fig, ax, pll_out_mem[20000:], Fout=Fosc, only_noise=True, sumover_N=50, color='C1', label='simulation')
+plot.plot_psd(fig, ax, Lout_ref, fstart=1e3, fend=Fref/2, color='C2', label='predict: ref')
+plot.plot_psd(fig, ax, Lout_dco, fstart=1e3, fend=Fref/2, color='C3', label='predict: dco')
+plot.plot_psd(fig, ax, Lout_q, fstart=1e3, fend=Fref/2, color='C4', label='predict: q')
+ax.legend(fontsize=16)
 
 fig, ax = plt.subplots(2,1)
 plot.bode(fig, ax, Hloop, enable_z=True, fsample=Fref, fstart=1e3, fend=Fref/2)
