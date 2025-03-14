@@ -1,15 +1,13 @@
 # bbpll
-# vanilla fractional bbpll
-# using third order dsm
 --- Netlist
-n_dco, net9, t_dco --> add --> net1
-net1 --> tf([1],[1,-1],1) --> pll_out
-n_ref, net10 --> sub --> net4
-net4 --> bbpd --> net5
-# net4 --> scaler(3.57e13) --> net5
-net5 --> scaler(Kp) --> net6
-net5 --> tf([Ki, 0],[1,-1],1) --> net7
-net6, net7 --> add --> net8
-net8 --> scaler(N*KT) --> net9
-n_mmd --> tf([1,-1],[1,0],1) --> tf([1,-1],[1,0],1) --> net11
-net11, pll_out --> add --> net10
+lambda n: np.random.randn()*sigma_ref --> n_ref
+lambda n: np.random.randn()*sigma_dco --> n_dco
+n_ref, fb --> sub --> net1
+net1 --> bbpd --> net2
+net2 --> scaler(Kp) --> net3
+net2 --> tf([Ki, 0],[1,-1],1) --> net4
+net3, net4 --> add --> net5
+net5 --> up_zoh(N) --> scaler(KT) --> net6
+n_dco, net6 --> add --> net7
+net7 --> tf([1],[1,-1],1) --> pll_out
+pll_out --> down_sampler(N) --> fb

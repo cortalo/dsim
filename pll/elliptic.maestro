@@ -1,0 +1,77 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: elliptic
+runtime: net_o
+runnum: 1000
+saveall: True
+seed: 19
+--- Parameters
+
+# a0 = 0.0032
+# a1 = -0.0184
+# a2 = 0.0446
+# a3 = -0.0589
+# a4 = 0.0446
+# a5 = -0.0184
+# a6 = 0.0032
+
+# b1 = -5.8678
+# b2 = 14.3900
+# b3 = -18.8774
+# b4 = 13.9711
+# b5 = -5.5308
+# b6 = 0.9150
+
+def func(x, num):
+    ret = []
+    for i in x:
+        ret.append(int(i*num)/num)
+    return ret
+
+def print_int(x, num, a):
+    ret = []
+    for i in range(len(x)):
+        print('assign {}{} = {};'.format(a,i, int(x[i]*num)))
+
+#b = [1,-5.867811660461686,14.389964631261687,-18.877354664276460,13.971071101807254,-5.530847167435351,0.914979433736819]
+#a = [0.003246996073685,-0.018445038133590,0.044623882189762,-0.058850494710861,0.044623882189762,-0.018445038133590,0.003246996073685]
+
+#b = [1,-5.695834330079848,13.562240344526225,-17.277728990333692,12.419630453757511,-4.775749742130203,0.767447003130900]
+#a = [0.003163882137622,-0.017253411688624,0.040712809158691,-0.053241874589895,0.040712809158691,-0.017253411688624,0.003163882137622]
+
+b = [1,-5.695839041045027,13.561076062509072,-17.273385966504115,12.413552302860210,-4.771951687559581,0.766552339755242]
+a = [0.001060869075877,-0.005562193260978,0.012810711318538,-0.016614810153347,0.012810711318538,-0.005562193260978,0.001060869075877]
+
+print_int(a, pow(2,24), 'a')
+print_int(b, pow(2,24), 'b')
+
+b = func(b, pow(2,24))
+a = func(a, pow(2,24))
+
+--- Plots
+from matplotlib.ticker import EngFormatter
+Fref = 1
+
+fig, ax = plt.subplots(1,1)
+cur_ax = ax
+plot.pts(fig, cur_ax, net1_mem[int(len(net0_mem)/5*0):], Fs=Fref, marker='o')
+formatter = EngFormatter(unit='s')  # You can change 's' to the appropriate unit
+cur_ax.set_title('DLF output')
+cur_ax.xaxis.set_major_formatter(formatter)
+plt.show()
+
+fig, ax = plt.subplots(2,1)
+# nom = lambda z: a[0] + a[1]*pow(z,-1) + a[2]*pow(z,-2) + a[3]*pow(z,-3) + a[4]*pow(z,-4) + a[5]*pow(z,-5) + a[6]*pow(z,-6)
+# denom = lambda z: 1 + b[1]*pow(z,-1) + b[2]*pow(z,-2) + b[3]*pow(z,-3) + b[4]*pow(z,-4) + b[5]*pow(z,-5) + b[6]*pow(z,-6)
+Fs = 4e3
+f = 1
+a = 1 - pow(0.5,6)
+nom = lambda z: 1 - a
+denom = lambda z: 1 - a*pow(z,-1)
+print(a)
+
+
+
+H = lambda z: frac(nom(z), denom(z))
+plot.bode(fig, ax, H, enable_z = True, fsample=Fs, fstart=1e-3, fend=500)
+plt.show()

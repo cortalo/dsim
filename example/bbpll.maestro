@@ -6,11 +6,11 @@ runnum: 1000000
 save: pll
 seed: 7
 --- Parameters
-sigma_ref_buf = 50e-15
-sigma_bbpd = 25e-15
-sigma_div = 15e-15
-sigma_dco = 1e-15
-Fout = 5e9
+sigma_ref_buf = 3e-15
+sigma_bbpd = 1e-16
+sigma_div = 1e-16
+sigma_dco = 157e-15
+Fout = 4e9
 DSM_BF = 300e3
 KT = (1/Fout) - 1/(Fout+DSM_BF)
 DIV_N = 50

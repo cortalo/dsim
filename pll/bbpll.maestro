@@ -2,45 +2,37 @@
 dsim: /home/longhe/repos/dsim
 schematic: bbpll
 runtime: pll_out
-runnum: 1000000
+runnum: 100000
 saveall: True
 seed: 13
 --- Parameters
-N = 25
-Fref = 600e6
+N = 1
+Fref = 10e6
 Tref = 1/Fref
 Fosc = N*Fref
 Tosc = 1/Fosc
+sigma_ref = 1e-12
+sigma_dco = 100e-12
+KT = 10e-12
+Kp = 10
+Ki = 0.1
 
-
-Lref = -170
-sigma_ref = plot.L2jitter(Lref, Fref)
-L_dco = -160
-sigma_dco = plot.VCO_L2jitter(L_dco, Fosc, 100e6)
-
-Kvco = 200e3
-KT = (1/Fosc) - (1/(Fosc+Kvco))
-
-Kp = 128e-3
-Ki = Kp / 100
-
-n_dco_mem = []
-n_dco = dsim.sig_init(lambda: lambda n: sqrt(N)*np.random.randn()*sigma_dco, n_dco_mem)
-n_ref_mem = []
-n_ref = dsim.sig_init(lambda: lambda n: np.random.randn()*sigma_ref * 1 + n/Fref, n_ref_mem)
-t_dco_mem = []
-t_dco = dsim.sig_init(lambda: lambda n: (N-0.0001)*Tosc, t_dco_mem)
-n_mmd_mem = []
-n_mmd = dsim.sig_init(lambda: lambda n: sqrt(1/12)*Tosc*np.random.randn()*1, n_mmd_mem)
 --- Plots
+
+eta = sqrt(pi/2)*(frac(sigma_dco**2, 2*Kp*KT) + frac(N*Kp*KT,2))
+sigma_delta_t = (eta/2) + sqrt((eta/2)**2 + sigma_ref**2)
+Kbpd = sqrt(2/pi) / sigma_delta_t
+sigma_out = sqrt(sigma_delta_t**2 - sigma_ref**2)
+print("expected output jitter: {}".format(EngNumber(sigma_out)))
+
+Hdlf = lambda z: Kp + frac(Ki,1-(1/z))
+Hloop = lambda z: Kbpd * Hdlf(z) * N * KT * frac(1,z-1)
+
 from matplotlib.ticker import EngFormatter
+fig, ax = plt.subplots(1,1)
+plot.phase_noise(fig, ax, pll_out_mem[20000:], Fout=Fref, only_noise=True, color='C0')
+plot.phase_noise(fig, ax, pll_out_mem[20000:], Fout=Fref, only_noise=True, sumover_N=50, color='C1')
 
-fig, ax = plt.subplots(1,2)
-plot.pts(fig, ax[0], net8_mem, Fs=Fref)
-plot.phase_noise(fig, ax[1], pll_out_mem[200000:], Fout=Fref, color='C0')
-plot.phase_noise(fig, ax[1], pll_out_mem[200000:], Fout=Fref, sumover_N=50, color='C1')
-
-formatter = EngFormatter(unit='s')  # You can change 's' to the appropriate unit
-ax[0].xaxis.set_major_formatter(formatter)
-
+fig, ax = plt.subplots(2,1)
+plot.bode(fig, ax, Hloop, enable_z=True, fsample=Fref, fstart=1e3, fend=Fref/2)
 plt.show()

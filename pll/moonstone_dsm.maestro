@@ -1,0 +1,159 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: bbpll_adc_dco_12ghz
+runtime: dsm_error
+runnum: 4
+# runnum: 10
+saveall: True
+seed: 19
+--- Parameters
+
+N = 20
+Fref = 600e6
+Tref = 1/Fref
+Fosc = N*Fref
+Tosc = 1/Fosc
+
+Lref = -150
+sigma_ref = plot.L2jitter(Lref, Fref)
+Ldco_num = -124
+Ldco_offset = 1e6
+sigma_dco = plot.VCO_L2jitter(Ldco_num, Fosc, Ldco_offset)
+
+print("reference jitter: {}s".format(EngNumber(sigma_ref)))
+print("dco jitter: {}s".format(EngNumber(sigma_dco)))
+
+
+Kvco = 50e3
+KT = (1/Fosc) - (1/(Fosc+Kvco))
+frac_num = 1
+Kp = 60
+Ki = Kp/100
+Fdsm = Fref
+
+adc_fb_gain = 0.01
+adc_ff_gain = 1
+cmp_gain = 1/adc_fb_gain/adc_ff_gain
+Hadc = lambda s: frac(adc_ff_gain*Fref/s*cmp_gain, 1+adc_fb_gain*adc_ff_gain*Fref/s*cmp_gain)
+
+
+
+omega_c = 2*pi*13e6
+var_a = math.exp(-omega_c * Tref)
+
+omega_d = 2*pi*10e6
+var_d = math.exp(-omega_d * Tref)
+
+Kp_tf = lambda s: Kp * frac(1,1+(s/omega_d)) * frac(1,1+(s/omega_d))
+Kp_tf = lambda s: Kp * frac(1,1+(s/omega_d))
+# Kp_tf = lambda s: Kp
+
+Kp_verilog = int(Kp*4096/2)
+Ki_verilog = int(Ki*4096/2)
+
+print("Kp: {}".format(EngNumber(Kp)))
+print("Ki: {}".format(EngNumber(Ki)))
+print("Kp_verilog: {}".format(EngNumber(Kp_verilog)))
+print("Ki_verilog: {}".format(EngNumber(Ki_verilog)))
+print("pole frequency: {}".format(EngNumber(omega_c/2/pi)))
+print("zero frequency: {}".format(EngNumber(frac(Ki*Fref,Kp)/2/pi)))
+print(var_d)
+print(var_d*pow(2,8))
+
+
+n_dco = dsim.sig_automem_init(lambda: lambda n: np.random.randn()*sigma_dco*1, 5000)
+n_ref = dsim.sig_automem_init(lambda: lambda n: np.random.randn()*sigma_ref*1 + (n)/Fref, 5000)
+t_dco = dsim.sig_automem_init(lambda: lambda n: 1/((N+frac_num/1024)*Fref + 0.2*Kvco), 5000)
+net13 = dsim.sig_automem_init(lambda: lambda n: -0.5, 5000)
+net16 = dsim.sig_automem_init(lambda: lambda n: 0.005*1, 5000)
+net22 = dsim.sig_automem_init(lambda: lambda n: np.random.randn()*1/sqrt(8)*1, 5000)
+lp_coeff = dsim.sig_automem_init(lambda: lambda n: 230, 5000)
+ratio = dsim.sig_automem_init(lambda: lambda n: int(N * 1024 + frac_num) , 5000)
+--- Plots
+from matplotlib.ticker import EngFormatter
+from scipy import integrate
+
+fig, ax = plt.subplots(1,1)
+cur_ax = ax
+
+N=25
+Fosc = 14.4e9
+Fref=Fosc/N
+gain_const_value= 2e8
+gain=gain_const_value*N/25
+Kvco=2e6
+fp = 3e6
+fp2= 10e6
+fz = 3e5
+Lref=-126 - 20*math.log10(N)
+Ldco_num = -124
+Ldco_offset = 1e6
+
+Hopen_ref = lambda s: frac(1,2*pi)*frac(gain,s)*frac(1+s/(2*pi*fz),1+s/(2*pi*fp))*frac(1,1+s/(2*pi*fp2))*frac(2*pi*Kvco,s)
+Hloop = lambda s: Hopen_ref(s) / N
+
+fig, ax = plt.subplots(2,1)
+plot.bode(fig, ax, Hloop)
+
+
+# DCO noise output
+Hclose_dco = lambda s: 1/(1+Hopen_ref(s)/N)
+Ldco = lambda f: frac((2*pi*Ldco_offset)**2 * pow(10,Ldco_num/10), (2*pi*f)**2)
+Ldco_out = lambda f: Ldco(f)*plot.tf2psd(Hclose_dco)(f)
+plot.plot_psd(fig, cur_ax, Ldco_out, fstart=1e3, fend=7e9, color='C0', label='dco output', linewidth=2)
+
+dco_jitter = plot.Lf2jitter(Ldco_out, Fosc, start=1e3, end=100e6)
+print("dco output: {}".format(EngNumber(dco_jitter)))
+
+# reference noise output
+Lref_f = lambda f: pow(10, Lref/10)
+Hclose_ref = lambda s: Hopen_ref(s)/(1+Hopen_ref(s)/N)
+Lref_out = lambda f: Lref_f(f)*plot.tf2psd(Hclose_ref)(f)
+plot.plot_psd(fig, cur_ax, Lref_out, fstart=1e3, fend=7e9, color='C1', label='ref output', linewidth=2)
+
+ref_jitter = plot.Lf2jitter(Lref_out, Fosc, start=1e3, end=100e6)
+print("ref output: {}".format(EngNumber(ref_jitter)))
+
+
+# # divider noise output
+Ldsm = lambda f: frac(pow(2*pi,2), 12*Fref)*pow(2*math.sin(pi*f/Fref), 2*2)
+Hclose_dsm = lambda s: (Hopen_ref(s)/N)/(1+(Hopen_ref(s)/N))
+Ldsm_out = lambda f: Ldsm(f)*plot.tf2psd(Hclose_dsm)(f)
+plot.plot_psd(fig, cur_ax, Ldsm_out, fstart=1e3, fend=7e9, color='C2', label='divider Q output', linewidth=2)
+dsm_jitter = plot.Lf2jitter(Ldsm_out, Fosc, start=1e3, end=100e6)
+print("dsm output: {}".format(EngNumber(dsm_jitter)))
+
+total_jitter = plot.Lf2jitter(lambda f: Ldco_out(f) + Lref_out(f) + Ldsm_out(f), Fosc, start=1e3, end=100e6)
+print("total output (600e6): {}".format(EngNumber(total_jitter)))
+
+N = 50
+Fref = Fosc/N
+gain=2e8*N/25
+Lref=-126 - 20*math.log10(N)
+
+dco_jitter = plot.Lf2jitter(Ldco_out, Fosc, start=1e3, end=100e6)
+print("dco output: {}".format(EngNumber(dco_jitter)))
+ref_jitter = plot.Lf2jitter(Lref_out, Fosc, start=1e3, end=100e6)
+print("ref output: {}".format(EngNumber(ref_jitter)))
+
+Ldsm = lambda f: frac(pow(2*pi,2), 12*Fref)*pow(2*math.sin(pi*f/Fref), 2*2)
+Hclose_dsm = lambda s: (Hopen_ref(s)/N)/(1+(Hopen_ref(s)/N))
+Ldsm_out = lambda f: Ldsm(f)*plot.tf2psd(Hclose_dsm)(f)
+plot.plot_psd(fig, cur_ax, Ldsm_out, fstart=1e3, fend=7e9, color='C3', label='divider Q output', linewidth=2)
+dsm_jitter = plot.Lf2jitter(Ldsm_out, Fosc, start=1e3, end=100e6)
+print("dsm output: {}".format(EngNumber(dsm_jitter)))
+
+total_jitter = plot.Lf2jitter(lambda f: Ldco_out(f) + Lref_out(f) + Ldsm_out(f), Fosc, start=1e3, end=100e6)
+print("total output (300e6): {}".format(EngNumber(total_jitter)))
+
+
+
+cur_ax.set_title('')
+cur_ax.set_xlabel('')
+cur_ax.set_ylabel('')
+cur_ax.set_ylim(-180,-120)
+cur_ax.set_xlim(1e3,300e6)
+
+
+
+plt.show()

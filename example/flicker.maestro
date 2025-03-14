@@ -1,0 +1,15 @@
+--- Test
+dsim: /home/longhe/repos/dsim
+schematic: flicker
+runtime: out
+runnum: 1000000
+saveall: True
+seed: 13
+--- Parameters
+
+
+--- Plots
+fig, ax = plt.subplots(1,1)
+plot.plot_psd(fig, ax, out_mem, Fs=4.6e9, color='C0')
+plot.plot_psd(fig, ax, out_mem, Fs=4.6e9, color='C1', sumover_N=10)
+plt.show()

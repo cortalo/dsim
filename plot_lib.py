@@ -7,6 +7,8 @@ import cmath
 import types
 from engineering_notation import EngNumber
 import control
+from scipy import signal
+from scipy import integrate
 tf=control.TransferFunction
 
 
@@ -211,6 +213,11 @@ def bode(fig, axs, h, fstart = 1, fend = 1e9, enable_pm=True, enable_z=False, fs
         axs[1].axvline(x=bw_calc, color='gray', linestyle='--')
     return fig, axs
 
+def welch(fig, ax, h, Fs, nperseg=1024, color='C0', label=''):
+    tick_semilogx(ax)
+    f, Pxx_den = signal.welch(h, fs=Fs, nperseg=nperseg)
+    ax.semilogx(f, dB10(Pxx_den), color=color, label=label)
+
 def plot_psd(fig, ax, h, fstart=1, fend=1e9, line='-', label='', Fs=1, sumover_N = 1, atten=1, color='C0', linewidth=1):
     ''' plot the power spectral density
     h = lambda freq: psd; or
@@ -253,7 +260,7 @@ def phase_noise(fig, ax, tps, Fout, line='-', label='', sumover_N = 1, only_nois
         num1 = len(tps) - 1
         num2 = len(tps) // 2
         Fout = (num1 - num2) / (tps[num1] - tps[num2])
-        print("Found Fout: {}Hz plus {}Hz".format(EngNumber(Fout), EngNumber(Fout-Fexp)))
+        print("Found Fout: {}Hz plus {}Hz".format(EngNumber(Fexp), EngNumber(Fout-Fexp)))
         tmp = []
         i = 0
         for t in tps:
@@ -442,3 +449,8 @@ def even_ary(ary):
 
 
 
+def Lf2jitter(L, Fosc, start=0, end=None):
+    if end is None:
+        end = Fosc/2
+    result, _ = integrate.quad(lambda f: L(f)*2, start, end)
+    return math.sqrt(result*pow(1/2/math.pi/Fosc,2))

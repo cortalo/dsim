@@ -125,9 +125,9 @@ plot.plot_psd(fig, cur_ax, Lbbq_out, fstart=1e3, fend=7e9, color='C4', label='co
 
 
 # # divider noise output
-# Ldsm = lambda f: frac(pow(2*pi,2), 12*Fref)*pow(2*math.sin(pi*f/Fref), 2*2)
-# Hclose_dsm = lambda s: (Hopen_ref(s)/N)/(1+(Hopen_ref(s)/N))
-# plot.plot_psd(fig, cur_ax, lambda f: Ldsm(f)*plot.tf2psd(Hclose_dsm)(f), fstart=1e3, fend=7e9, color='C5', label='divider Q output', linewidth=2)
+Ldsm = lambda f: frac(pow(2*pi,2), 12*Fref)*pow(2*math.sin(pi*f/Fref), 2*2)
+Hclose_dsm = lambda s: (Hopen_ref(s)/N)/(1+(Hopen_ref(s)/N))
+plot.plot_psd(fig, cur_ax, lambda f: Ldsm(f)*plot.tf2psd(Hclose_dsm)(f), fstart=1e3, fend=7e9, color='C5', label='divider Q output', linewidth=2)
 
 # dco quantization noise
 Fdsm_dco = Fref
