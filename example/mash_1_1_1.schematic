@@ -1,12 +1,14 @@
 # MASH-1-1-1
 --- Netlist
 x --> efm1 --> e1, y1
-e1 --> efm1 --> e2, y2
-e2 --> efm1 --> e3, y3
+e1 --> delay(1) --> efm1 --> e2, y2
+e2 --> delay(1) --> efm1 --> e3, y3
 y3 --> diff --> net3
-net3, y2 --> add --> net2
+y2 --> delay(1) --> y2a
+y1 --> delay(2) --> y1a
+net3, y2a --> add --> net2
 net2 --> diff --> net1
-y1, net1 --> add --> y
+y1a, net1 --> add --> y
 --- Pin
 in: x
 out: y
