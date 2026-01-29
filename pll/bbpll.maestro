@@ -1,5 +1,5 @@
 --- Test
-dsim: /home/longhe/repos/dsim
+dsim: /home/long/repos/dsim
 schematic: bbpll
 runtime: pll_out
 runnum: 100000
@@ -11,8 +11,8 @@ Fref = 10e6
 Tref = 1/Fref
 Fosc = N*Fref
 Tosc = 1/Fosc
-sigma_ref = 10e-12
-sigma_dco = 100e-12
+sigma_ref = 10e-21
+sigma_dco = 1000e-12
 KT = 10e-12
 Kp = 10
 Ki = 0.1
