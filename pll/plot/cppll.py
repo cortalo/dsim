@@ -16,15 +16,15 @@ frac = lambda x,y: x/y
 sin = math.sin
 
 
-Fref=600e3
+Fref=1e6
 
-Icp = 500e-6
-Kvco = 1e5*2*pi
+Icp = 1e-6
+Kvco = 2e6*2*pi
 N = 1
 
-Cs = 10e-9
-Cp = 300e-12
-Rs = 4e3
+Rs = 500e3
+Cs = 15.8e-12
+Cp = 1e-12
 
 Hlf_1 = lambda s: Rs + (1/s/Cs)
 Hlf_2 = lambda s: (1/s/Cp)

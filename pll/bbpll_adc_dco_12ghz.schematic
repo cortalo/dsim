@@ -25,7 +25,8 @@ net19 --> comparator --> net14
 
 
 # digital loop filter
-net14 --> delay(1) --> bbpd --> scaler(Kp_verilog) --> kp_full_in
+net14 --> delay(1) --> bbpd --> scaler(Kp_veril        # return sout()(idx) + 100000000.0*pow(sout()(idx), 2)
+og) --> kp_full_in
 net14 --> delay(1) --> bbpd --> scaler(Ki_verilog) --> ki_full_in
 kp_full_in, lp_coeff --> low_pass_verilog --> lp_out_1
 lp_out_1, lp_coeff --> low_pass_verilog --> lp_out_2
